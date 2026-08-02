@@ -50,7 +50,7 @@ afterEach(() => {
 
 // The single add-action: open the "Add skill" menu, pick a door (SKILLS-SPEC §5).
 const openWriteForm = async () => {
-  fireEvent.click(await screen.findByRole("button", { name: /Add skill/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /Add Skill/ }));
   fireEvent.click(screen.getByText("Write it myself"));
 };
 
@@ -71,11 +71,11 @@ describe("SkillsTab", () => {
     stubFetch([{ match: "/v1/skills", method: "GET", json: { skills: [] } }]);
     render(<SkillsTab />);
     await openWriteForm();
-    const save = screen.getByText("Save skill") as HTMLButtonElement;
+    const save = screen.getByText("Save Skill") as HTMLButtonElement;
     expect(save.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "greet" } });
     expect(save.disabled).toBe(true); // instructions still empty
-    fireEvent.change(screen.getByLabelText("Instructions"), {
+    fireEvent.change(screen.getByLabelText("Execution instructions"), {
       target: { value: "Say hello." },
     });
     expect(save.disabled).toBe(false);
@@ -89,10 +89,10 @@ describe("SkillsTab", () => {
     render(<SkillsTab />);
     await openWriteForm();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "greet" } });
-    fireEvent.change(screen.getByLabelText("Instructions"), {
+    fireEvent.change(screen.getByLabelText("Execution instructions"), {
       target: { value: "Say hello." },
     });
-    fireEvent.click(screen.getByText("Save skill"));
+    fireEvent.click(screen.getByText("Save Skill"));
     await waitFor(() => {
       const post = calls.find((c) => c.method === "POST" && c.url.endsWith("/v1/skills"));
       expect(post?.body).toMatchObject({ name: "greet", instructions: "Say hello." });
@@ -113,10 +113,10 @@ describe("SkillsTab", () => {
     const name = screen.getByLabelText("Name") as HTMLInputElement;
     expect(name.value).toBe("weekly-report");
     expect(name.disabled).toBe(true);
-    const body = screen.getByLabelText("Instructions") as HTMLTextAreaElement;
+    const body = screen.getByLabelText("Execution instructions") as HTMLTextAreaElement;
     expect(body.value).toContain("Collect updates");
     fireEvent.change(body, { target: { value: "New steps" } });
-    fireEvent.click(screen.getByText("Save skill"));
+    fireEvent.click(screen.getByText("Save Skill"));
     await waitFor(() => {
       const patch = calls.find((c) => c.method === "PATCH");
       expect(patch?.url).toContain("/v1/skills/weekly-report");
@@ -156,7 +156,7 @@ describe("SkillsTab", () => {
     const status = await screen.findByRole("status");
     expect(status.textContent).toContain("weekly-report"); // name-first — WHICH skill
     expect(status.textContent).toContain("turned off everywhere");
-    expect(status.textContent).toContain("clean slate"); // the guaranteed remedy, in place
+    expect(status.textContent).toContain("clean context"); // the guaranteed remedy, in place
   });
 
   it("upload shows the parsed preview and installs nothing until confirmed", async () => {
@@ -177,14 +177,14 @@ describe("SkillsTab", () => {
       { match: "/v1/skills", method: "GET", json: { skills: [] } },
     ]);
     render(<SkillsTab />);
-    const input = (await screen.findByLabelText("Upload a skill archive")) as HTMLInputElement;
+    const input = (await screen.findByLabelText("Upload a Skill file")) as HTMLInputElement;
     const file = new File([new Uint8Array([80, 75, 3, 4])], "greet.zip", { type: "application/zip" });
     fireEvent.change(input, { target: { files: [file] } });
     await screen.findByText("Review before installing");
     expect(screen.getByText("Say hello warmly.")).toBeTruthy();
     expect(screen.getByText(/notes\.txt/)).toBeTruthy();
     expect(calls.some((c) => c.url.includes("/upload/confirm"))).toBe(false); // preview ≠ install
-    fireEvent.click(screen.getByText("Install skill"));
+    fireEvent.click(screen.getByText("Install Skill"));
     await waitFor(() => {
       const confirm = calls.find((c) => c.url.includes("/upload/confirm"));
       expect(confirm?.body).toMatchObject({ token: "t1" });
@@ -195,13 +195,13 @@ describe("SkillsTab", () => {
     const calls = stubFetch([{ match: "/v1/skills", method: "GET", json: { skills: [] } }]);
     const onCreateSkill = vi.fn();
     render(<SkillsTab onCreateSkill={onCreateSkill} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Add skill/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Add Skill/ }));
     // The three doors (§5), each with its teaching subtitle.
     expect(screen.getByText("Write it myself")).toBeTruthy();
     expect(screen.getByText("Import a file")).toBeTruthy();
-    expect(screen.getByText(/you review before it installs/)).toBeTruthy();
-    expect(screen.getByText(/asks before adding it to\s+your skills/)).toBeTruthy();
-    fireEvent.click(screen.getByText("Create with OpenWorker"));
+    expect(screen.getByText(/review it before installation/)).toBeTruthy();
+    expect(screen.getByText(/asks before adding it/)).toBeTruthy();
+    fireEvent.click(screen.getByText("Create with Atlas"));
     // Straight to the conversation — the composer is where you describe it (§5.2).
     expect(onCreateSkill).toHaveBeenCalledWith("");
     // Settings never drafts: no POST of any kind happened.
@@ -226,17 +226,17 @@ describe("SkillsTab", () => {
     render(<SkillsTab />);
     await openWriteForm();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "greet" } });
-    fireEvent.change(screen.getByLabelText("Instructions"), { target: { value: "x" } });
-    fireEvent.click(screen.getByText("Save skill"));
+    fireEvent.change(screen.getByLabelText("Execution instructions"), { target: { value: "x" } });
+    fireEvent.click(screen.getByText("Save Skill"));
     const status = await screen.findByRole("status");
     expect(status.textContent).toContain("greet"); // name-first — WHICH skill
-    expect(status.textContent).toContain("can now use it in every conversation");
+    expect(status.textContent).toContain("can now use it in every task");
   });
 
   it("the list is the page: no standing add-surfaces, no drafting remnants", async () => {
     stubFetch([{ match: "/v1/skills", method: "GET", json: { skills: [] } }]);
     render(<SkillsTab onCreateSkill={vi.fn()} />);
-    await screen.findByRole("button", { name: /Add skill/ });
+    await screen.findByRole("button", { name: /Add Skill/ });
     // No permanently-open description box or draft-era UI (§5.2/§9) — adding is menu-only.
     expect(screen.queryByLabelText("Describe the skill")).toBeNull();
     expect(screen.queryByText("Start a conversation")).toBeNull();
@@ -245,7 +245,7 @@ describe("SkillsTab", () => {
     // The menu closes after picking a door.
     await openWriteForm();
     expect(screen.queryByText("Write it myself")).toBeNull();
-    expect(screen.getByText("Save skill")).toBeTruthy();
+    expect(screen.getByText("Save Skill")).toBeTruthy();
   });
 
   it("surfaces server-side validation errors", async () => {
@@ -256,8 +256,8 @@ describe("SkillsTab", () => {
     render(<SkillsTab />);
     await openWriteForm();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "x" } });
-    fireEvent.change(screen.getByLabelText("Instructions"), { target: { value: "y" } });
-    fireEvent.click(screen.getByText("Save skill"));
+    fireEvent.change(screen.getByLabelText("Execution instructions"), { target: { value: "y" } });
+    fireEvent.click(screen.getByText("Save Skill"));
     expect(await screen.findByRole("alert")).toBeTruthy();
     expect(screen.getByText(/already exists/)).toBeTruthy();
   });
@@ -278,9 +278,9 @@ describe("SkillsTab — rich-skill disclosure (§6)", () => {
       },
     ]);
     render(<SkillsTab />);
-    const note = await screen.findByTitle("Show folder");
+    const note = await screen.findByTitle("Open Skill folder");
     expect(note.textContent).toContain("3 files");
     // The one-file skill carries no count at all — only rich skills are marked.
-    expect(screen.getAllByTitle("Show folder")).toHaveLength(1);
+    expect(screen.getAllByTitle("Open Skill folder")).toHaveLength(1);
   });
 });
