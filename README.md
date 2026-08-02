@@ -1,121 +1,168 @@
-# OpenWorker
+# Atlas
 
-**[openworker.com](https://openworker.com)** · [Download](#download) · [Issues](https://github.com/andrewyng/openworker/issues)
+面向创造者与企业的本地优先 AI 工作执行基础设施。
 
-<a href="https://trendshift.io/repositories/91434?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-91434" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/91434/daily?language=Python" alt="andrewyng%2Fopenworker | Trendshift" width="250" height="55"/></a>
+Atlas 将用户意图转化为可追踪的任务和可打开、可审核、可复用的真实交付物，而不只是提供一个聊天窗口。项目基于 OpenWorker 的本地 Agent Runtime 改造，并从同一套代码构建两种产品模式：
 
-> **Beta** - OpenWorker is in open beta: fully usable, updates itself, and we're actively polishing rough edges. [Issues](https://github.com/andrewyng/openworker/issues) welcome.
+- **Atlas Creator**：面向 AI 创客、学员、导师和项目创造流程。
+- **Atlas Enterprise**：面向团队的企业 AI 员工底座与标准化 Agent 交付平台。
+- **Atlas Agent Core**：两套产品共享的 Agent、模型、工具、权限、记忆、任务、交付物与审计内核。
 
-**AI that gets your everyday tasks done.** OpenWorker is an open-source AI coworker that lives on your desktop and delivers **finished work**, not just chat: a polished document, a Slack reply with the numbers, an updated calendar, a triaged inbox.
+> **Alpha 基础阶段**：当前仓库已经完成双产品 Manifest、运行时产品上下文、独立应用/数据标识、最小中英国际化和双产品构建入口。Control Plane、Creator 完整项目流程、Enterprise RBAC、签名安装包与生产部署仍在持续开发。
 
-It runs on your machine and doesn't lock you into any model: bring your own API key for OpenAI, Anthropic, Google, or an open-weight provider, or run fully local with Ollama. Your data leaves your machine only through the model and integrations *you* choose.
+## 核心设计
 
-[![How OpenWorker works](docs/assets/how-it-works.png)](https://openworker.com)
+### 一个内核，两套产品
 
-## Download
+Creator 和 Enterprise 不是两个长期分叉的 Fork。产品差异由以下机制声明：
 
-[**⬇ macOS (Apple Silicon)**](https://download.openworker.com/mac)
-<sub>macOS 12+ · signed & notarized · auto-updates</sub>
+- Product Manifest
+- Feature Flags
+- Theme 与品牌信息
+- Policy Profile
+- Agent、Skill 与 Connector Bundles
+- 独立应用 Identifier 和数据目录
 
-[**⬇ Windows 10/11 (x64)**](https://download.openworker.com/windows)
-<sub>builds are not yet code-signed, so SmartScreen will warn; signing is in progress</sub>
+内置产品清单位于：
 
-Open the app, add a model key (or point it at Ollama), and ask for something real.
+- `atlas/core/manifests/creator.yaml`
+- `atlas/core/manifests/enterprise.yaml`
 
-## How it works
+### 本地优先与安全默认值
 
-1. Tell OpenWorker the outcome you want - "prepare a customer brief," "untangle my calendar," "draft a report," "check where the release stands across Jira and GitHub."
-2. It breaks the task into steps and works across your desktop, files, and connected apps.
-3. Before anything consequential - sending a message, changing a calendar, running a command - it checks in and you approve or redirect.
-4. You get the finished deliverable, not a to-do list.
+- Agent Runtime、会话、密钥和主要工作数据默认保留在本地。
+- Atlas 构建默认不连接 OpenWorker Cloud、Relay、Telemetry 或更新服务。
+- 高风险操作沿用审批、工作区 Root、Shell 风险和 SSRF 防护机制。
+- Creator 与 Enterprise 使用不同数据目录：`com.atlas.creator` 和 `com.atlas.enterprise`。
+- 部署级服务配置只能从用户拥有的全局配置启用，工作区配置不能覆盖这些安全边界。
 
-Under the hood:
+## 架构
 
 ```text
-┌────────────────────────────────────────────────┐
-│              OpenWorker desktop app            │  native shell + GUI
-├────────────────────────────────────────────────┤
-│           local agent server (Python)          │  engine · tools · connectors - built on aisuite
-├───────────────┬────────────────┬───────────────┤
-│  your files   │   your tools   │  your model   │  everything runs with your keys,
-│  & terminal   │ 25+ connectors │  any provider │  on your machine
-└───────────────┴────────────────┴───────────────┘
+Atlas Creator / Atlas Enterprise
+              │
+              ▼
+       Atlas Product Context
+ Manifest · Policy · Features · Bundles
+              │
+              ▼
+        Atlas Agent Core
+ Session · Model · Tool · Skill · Memory
+ Approval · Artifact · Audit · Automation
+              │
+              ▼
+ OpenWorker-compatible local runtime
+ Files · Browser · Terminal · MCP · Connectors
 ```
 
-## What it can do
+后续企业交付将在执行平面之外增加 Atlas Control Plane，负责组织、租户、权限、任务调度、审计、用量与 Runtime Registry。本仓库当前不宣称已经达到生产级多租户标准。
 
-- **Produce real deliverables** - documents, spreadsheets, reports, and web pages land as files you can open and share.
-- **Work from Slack** - mention `@OpenWorker` in a channel; a session opens on your desktop, the work happens with your tools, and the answer comes back as a thread reply.
-- **Use your everyday tools** - 25+ integrations including GitHub, Slack, Jira, Notion, Linear, HubSpot, Outlook, monday.com, Gmail, and Google Calendar, plus your **terminal and local files**. Any tool reachable over [MCP](https://modelcontextprotocol.io/) plugs in too, with per-tool control.
-- **Run on a schedule** - automations for recurring work: a morning brief, a weekly report, a standing watch over a channel. Runs land in the app with full transcripts.
-- **Ask before acting** - writes, sends, and shell commands are approval-gated. Unattended runs park their asks in an inbox instead of acting on their own.
+## 当前能力
 
-## Bring your own model
+- Python FastAPI Agent Runtime
+- React + Vite + Tauri 桌面端
+- 多模型 Provider 路由和本地模型支持
+- MCP、Skills、Persona 与 Connector
+- Memory、Automation、Inbox 与 Approval
+- 本地文件、终端、浏览器与交付物生成
+- Creator/Enterprise 严格 Product Manifest 校验
+- 后端 `/v1/product` 产品上下文契约
+- `zh-CN` / `en-US` 新增文案目录
+- Windows PowerShell 与 Make 双产品开发入口
 
-Model access is yours: pick a provider, paste your key, switch anytime. Supported out of the box:
+## 从源码运行
 
-**OpenAI · Anthropic · Google Gemini · Inkling (Thinking Machines) · GLM (Z.ai) · DeepSeek · Kimi (Moonshot) · Qwen · MiniMax · Mistral · Grok (xAI)** - plus open-weight models via **Together** and **Fireworks**, and fully local models via **Ollama**.
+环境要求：Python 3.10+、Node.js 20+；桌面构建还需要 Rust 工具链和对应平台的原生构建工具。
 
-A curated model list marks what we've verified for tool-calling work. Adding any model string works at your own risk.
-
-## Privacy
-
-OpenWorker is local-first. Everything lives on your machine: the agent loop, your conversations, connector tokens, and model keys - all in the app's local secret store. The only cloud piece is a small service that brokers OAuth handshakes for connectors. You can always use the App without signing-in - use the connectors via manually-created credentials/API-keys.
-
-## Run from source
-
-Prerequisites: Python 3.10+, Node 20+, and (for the desktop shell) the Rust toolchain via [rustup](https://rustup.rs/).
-
-```shell
-git clone https://github.com/andrewyng/openworker
+```bash
+git clone https://github.com/Frog1205/openworker.git
 cd openworker
 
-# 1. One-time bootstrap - creates the Python venv at .venv
-#    (on Windows, run from Git Bash or WSL)
-bash packaging/setup_dev_env.sh
+python -m venv .venv
 
-# 2. Start the local agent server
-.venv/bin/openworker-server --cwd ~/some/project --port 8765
-#    (Windows: .venv\Scripts\openworker-server.exe)
-
-# 3. In a second terminal, start the UI
+# Windows PowerShell
+.\.venv\Scripts\pip install -e ".[dev]"
 cd surfaces/gui
-npm install
-npm run dev        # browser UI on the Vite dev port
+npm ci
 ```
 
-The standalone server creates a per-launch token at
-`<state-dir>/sidecar-8765.token`; Vite reads that user-only file when it starts.
-For direct API calls, send its value in the `X-OpenWorker-Token` header. The
-desktop app uses an in-memory launch token instead and never writes it to disk.
+启动后端：
 
-To run the full desktop app instead of the browser UI, replace step 3 with `npm run tauri dev` (from `surfaces/gui/`) - the Tauri shell launches the window and supervises the server itself.
+```powershell
+# Atlas Creator
+.\scripts\atlas.ps1 dev -Product creator
 
-Tests: `.venv/bin/pytest` (server), `npm test` and `npm run e2e` in `surfaces/gui` (GUI unit + hermetic end-to-end). Desktop bundles are built with `packaging/build_dmg.sh` / `packaging/build_windows.ps1`.
+# Atlas Enterprise
+.\scripts\atlas.ps1 dev -Product enterprise
+```
 
-## Repository layout
+在另一个终端启动 GUI：
 
-| Directory | What's in it |
+```powershell
+cd surfaces\gui
+$env:ATLAS_PRODUCT = "creator" # 或 enterprise
+npm run dev
+```
+
+也可以在类 Unix 环境使用：
+
+```bash
+make dev PRODUCT=creator
+make test PRODUCT=creator
+make build-desktop PRODUCT=creator
+```
+
+将 `creator` 替换为 `enterprise` 即可切换产品模式。
+
+## 测试
+
+```powershell
+# Atlas 产品契约与隔离测试
+.\.venv\Scripts\python -m pytest tests/test_atlas_product.py tests/test_atlas_state.py -q
+
+# GUI 测试与生产构建
+cd surfaces\gui
+npm test
+npm run build
+```
+
+当前已知的验证状态记录在 [`docs/implementation-status.md`](docs/implementation-status.md)，验收项记录在 [`docs/acceptance-checklist.md`](docs/acceptance-checklist.md)。
+
+## 仓库结构
+
+| 目录 | 说明 |
 |---|---|
-| `coworker/` | Python backend - agent engine, model providers, connectors, MCP client, memory, automations |
-| `surfaces/gui/` | Desktop app - React UI + Tauri shell that supervises the server |
-| `stt/` | Speech-to-text sidecar (Rust) for voice input |
-| `packaging/` | Installer builds (macOS DMG, Windows), auto-update manifest, dev bootstrap |
-| `docs/` | Design specs and decision logs |
-| `tests/` | Backend test suite |
+| `atlas/` | Atlas 产品清单、运行时上下文与后续领域扩展 |
+| `coworker/` | OpenWorker-compatible Python Agent Runtime，尽量保持上游兼容 |
+| `surfaces/gui/` | React/Vite GUI 与 Tauri 桌面壳 |
+| `packaging/` | Windows/macOS 打包工具 |
+| `scripts/` | Atlas 开发和测试入口 |
+| `tests/` | 后端单元、契约、集成与安全测试 |
+| `docs/adr/` | 架构决策记录 |
+| `docs/security/` | 威胁模型与安全状态 |
 
-## Built on aisuite
+## 开发原则
 
-OpenWorker's engine is built on [**aisuite**](https://github.com/andrewyng/aisuite), a lightweight Python library providing a unified chat-completions API across LLM providers and an agents layer with tools, toolkits, and MCP support. If you want to build your own agent harness rather than use ours, start there; this repo is a working reference for what aisuite can carry.
+- 优先在 `atlas/` 中增加扩展，通过窄接口接入上游 Runtime。
+- 不全局重命名 `coworker` Python 包，不创建两个长期独立 Fork。
+- 不允许工作区或会话配置降低产品安全策略。
+- 新增产品文案必须同时维护 `zh-CN` 和 `en-US`。
+- 功能必须包含测试、文档、权限检查、错误处理与已知风险说明。
 
-OpenWorker was originally developed inside the aisuite repository before moving to its own home here; thanks to the aisuite contributors whose work it builds on.
+详细设计请阅读：
 
-## Contributing
+- [`docs/codebase-assessment.md`](docs/codebase-assessment.md)
+- [`docs/adr/ADR-001-atlas-architecture.md`](docs/adr/ADR-001-atlas-architecture.md)
+- [`docs/adr/ADR-002-upstream-sync.md`](docs/adr/ADR-002-upstream-sync.md)
+- [`docs/adr/ADR-003-product-manifest.md`](docs/adr/ADR-003-product-manifest.md)
+- [`docs/security/threat-model.md`](docs/security/threat-model.md)
 
-Contributions and bug reports are welcome - open an [issue](https://github.com/andrewyng/openworker/issues) or a pull request. The app updates itself, so fixes reach installs quickly.
-For any PR, please attach screenshots of what was broken and how it is fixed now. We will shortly add features that you can contribute to.
-Please note that we are actively developing based off a internal list and goal, so we may not approve PRs that add features that are already under-development or deviates from our vision.
+## Upstream 与许可证
 
-## License
+Atlas 基于 [andrewyng/openworker](https://github.com/andrewyng/openworker) 改造，并继续使用其基于 [aisuite](https://github.com/andrewyng/aisuite) 的 Agent Runtime 能力。感谢 OpenWorker、aisuite 及其贡献者。
 
-MIT - see [LICENSE](LICENSE).
+本项目保留原始 MIT 许可证和版权声明，详见 [`LICENSE`](LICENSE)。Atlas 品牌和新增产品设计不改变上游代码的许可证义务。
+
+---
+
+**English summary:** Atlas is a local-first AI work execution platform built on an OpenWorker-compatible runtime. One shared Atlas Agent Core powers Atlas Creator and Atlas Enterprise through validated product manifests, isolated identities, policies, feature flags, and bundles. The repository is currently in its Alpha foundation stage.
