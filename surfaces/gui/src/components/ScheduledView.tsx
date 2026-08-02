@@ -13,6 +13,7 @@ import {
 import { Icon } from "./Icon";
 import { PanelHead } from "./IntegrationsView";
 import { AutomationQuickstart } from "./AutomationQuickstart";
+import { useI18n } from "../I18nProvider";
 
 // Shared utility strings (the §28 page shell — mirrors IntegrationsView's constants).
 const CARD = "rounded-xl2 border border-line bg-panel";
@@ -64,6 +65,8 @@ interface Props {
 }
 
 export function ScheduledView({ onOpenRun, onRunNow, initialOpenId }: Props) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [tasks, setTasks] = useState<Automation[]>([]);
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
   const [showForm, setShowForm] = useState(false);
@@ -123,21 +126,20 @@ export function ScheduledView({ onOpenRun, onRunNow, initialOpenId }: Props) {
     <Shell>
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <PanelHead title="Automations" sub="Recurring tasks OpenWorker runs on a schedule." />
+          <PanelHead title={zh ? "自动化" : "Automations"} sub={zh ? "让 Atlas Worker 按计划自动执行周期任务。" : "Recurring tasks Atlas Worker runs on a schedule."} />
         </div>
         <button
           className="text-[12.5px] px-3 py-1.5 rounded-lg border border-lineStrong bg-panel hover:border-accent hover:text-accent shrink-0"
           onClick={() => setShowForm((v) => !v)}
         >
-          + New automation
+          {zh ? "+ 新建自动化" : "+ New automation"}
         </button>
       </div>
 
       <div className="text-[12px] text-faint flex gap-1.5 mb-4">
         <span aria-hidden>ⓘ</span>
         <span>
-          Runs only while openworker-server is up — a missed schedule catches up once when it next
-          starts.
+          {zh ? "仅在 Atlas Worker 服务运行时执行；若错过计划时间，服务下次启动后会自动补跑一次。" : "Runs only while atlas-worker-server is up — a missed schedule catches up once when it next starts."}
         </span>
       </div>
 
@@ -156,8 +158,7 @@ export function ScheduledView({ onOpenRun, onRunNow, initialOpenId }: Props) {
       {empty ? (
         !showForm && (
           <div className={CARD + " p-4 text-[12.5px] text-muted"}>
-            No scheduled tasks yet — use a template above, click <strong>+ New automation</strong>,
-            or just ask OpenWorker in a session.
+            {zh ? <>还没有计划任务——可以使用上方模板、点击 <strong>+ 新建自动化</strong>，或直接在任务中让 Atlas 创建。</> : <>No scheduled tasks yet — use a template above, click <strong>+ New automation</strong>, or just ask Atlas in a session.</>}
           </div>
         )
       ) : (
@@ -172,8 +173,8 @@ export function ScheduledView({ onOpenRun, onRunNow, initialOpenId }: Props) {
                 <span className="text-[13.5px] font-semibold truncate">{t.title}</span>
                 <button
                   className="sched-card-del"
-                  title="Delete automation"
-                  aria-label={`Delete ${t.title}`}
+                  title={zh ? "删除自动化" : "Delete automation"}
+                  aria-label={`${zh ? "删除" : "Delete"} ${t.title}`}
                   onClick={async (e) => {
                     e.stopPropagation();
                     await deleteAutomation(t.id);
@@ -185,8 +186,8 @@ export function ScheduledView({ onOpenRun, onRunNow, initialOpenId }: Props) {
               </div>
               <div className="flex items-center gap-1.5 text-[12px] text-muted">
                 <Icon name="clock" size={13} className="text-faint shrink-0" />
-                {t.enabled ? t.schedule : "Paused"} · next {fmt(t.next_run)} · {t.run_count} run{t.run_count === 1 ? "" : "s"}
-                {t.last_status ? ` · last ${t.last_status}` : ""}
+                {t.enabled ? t.schedule : (zh ? "已暂停" : "Paused")} · {zh ? "下次" : "next"} {fmt(t.next_run)} · {t.run_count} {zh ? "次运行" : `run${t.run_count === 1 ? "" : "s"}`}
+                {t.last_status ? ` · ${zh ? "最近" : "last"} ${t.last_status}` : ""}
               </div>
             </div>
           ))}
@@ -205,6 +206,8 @@ function NewAutomationForm({
   onCancel: () => void;
   onCreate: (p: { title: string; instructions: string; cron?: string }) => void;
 }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
   const [time, setTime] = useState("09:00");
@@ -215,23 +218,23 @@ function NewAutomationForm({
   return (
     <div className={CARD + " tmpl-form p-4 mb-4"}>
       <div className="text-[11px] uppercase tracking-[0.05em] text-faint mb-2.5">
-        New automation
+        {zh ? "新建自动化" : "New automation"}
       </div>
       <input
         className="tmpl-input"
-        placeholder="Title (e.g. Daily standup notes)"
+        placeholder={zh ? "名称（例如：每日站会摘要）" : "Title (e.g. Daily standup notes)"}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
       <textarea
         className="tmpl-input tmpl-textarea"
-        placeholder="What should it do each run? (e.g. Summarize today's calendar and open tasks.)"
+        placeholder={zh ? "每次运行时要完成什么？（例如：汇总今天的日程和待办事项。）" : "What should it do each run? (e.g. Summarize today's calendar and open tasks.)"}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
       <div className="tmpl-sched">
         <label className="tmpl-field">
-          <span>At</span>
+          <span>{zh ? "执行时间" : "At"}</span>
           <input
             type="time"
             className="tmpl-input tmpl-time"
@@ -240,15 +243,15 @@ function NewAutomationForm({
           />
         </label>
         <label className="tmpl-field">
-          <span>Repeat</span>
+          <span>{zh ? "重复周期" : "Repeat"}</span>
           <select
             className="tmpl-input tmpl-select"
             value={freq}
             onChange={(e) => setFreq(e.target.value)}
           >
-            <option value="daily">Every day</option>
-            <option value="weekdays">Weekdays</option>
-            <option value="weekends">Weekends</option>
+            <option value="daily">{zh ? "每天" : "Every day"}</option>
+            <option value="weekdays">{zh ? "工作日" : "Weekdays"}</option>
+            <option value="weekends">{zh ? "周末" : "Weekends"}</option>
           </select>
         </label>
       </div>
@@ -264,9 +267,9 @@ function NewAutomationForm({
             })
           }
         >
-          {busy ? "Creating…" : "Create automation"}
+          {busy ? (zh ? "正在创建…" : "Creating…") : (zh ? "创建自动化" : "Create automation")}
         </button>
-        <button className="link" onClick={onCancel}>cancel</button>
+        <button className="link" onClick={onCancel}>{zh ? "取消" : "Cancel"}</button>
       </div>
     </div>
   );
@@ -288,6 +291,8 @@ function TaskDetail({
   ) => void;
   onRunNow: (taskId: string, title?: string) => void;
 }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [task, setTask] = useState<Automation | null>(null);
   const [runs, setRuns] = useState<AutomationRun[]>([]);
   const [editing, setEditing] = useState(false);
@@ -328,7 +333,7 @@ function TaskDetail({
   if (!task)
     return (
       <Shell>
-        <div className="text-[13px] text-muted">Loading…</div>
+        <div className="text-[13px] text-muted">{zh ? "加载中…" : "Loading…"}</div>
       </Shell>
     );
 
@@ -367,7 +372,7 @@ function TaskDetail({
   return (
     <Shell>
       <button className="text-[13px] text-muted hover:text-ink mb-3" onClick={onBack}>
-        ← Automations
+        ← {zh ? "自动化" : "Automations"}
       </button>
       <div className="sched-detail">
         <div className="sched-detail-head">
@@ -376,7 +381,7 @@ function TaskDetail({
               className="tmpl-input sched-edit-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Title"
+              placeholder={zh ? "名称" : "Title"}
             />
           ) : (
             <h2 className="text-[18px] font-semibold tracking-tight">{task.title}</h2>
@@ -385,18 +390,18 @@ function TaskDetail({
             {editing ? (
               <>
                 <button className="btn-primary sm" disabled={saving || !title.trim() || !instructions.trim()} onClick={saveEdit}>
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? (zh ? "保存中…" : "Saving…") : (zh ? "保存" : "Save")}
                 </button>
-                <button className="link" onClick={() => setEditing(false)}>cancel</button>
+                <button className="link" onClick={() => setEditing(false)}>{zh ? "取消" : "Cancel"}</button>
               </>
             ) : (
               <>
                 <button className="btn-primary sm" onClick={() => onRunNow(id, task.title)}>
-                  ▶ Run now
+                  ▶ {zh ? "立即运行" : "Run now"}
                 </button>
-                <button className="btn sm" onClick={startEdit}>Edit</button>
+                <button className="btn sm" onClick={startEdit}>{zh ? "编辑" : "Edit"}</button>
                 <button className="btn sm danger-btn" onClick={remove}>
-                  <Icon name="trash" size={14} /> Delete
+                  <Icon name="trash" size={14} /> {zh ? "删除" : "Delete"}
                 </button>
               </>
             )}
@@ -406,15 +411,15 @@ function TaskDetail({
         {editing ? (
           <div className="tmpl-sched sched-edit-sched">
             <label className="tmpl-field">
-              <span>At</span>
+              <span>{zh ? "执行时间" : "At"}</span>
               <input type="time" className="tmpl-input tmpl-time" value={time} onChange={(e) => setTime(e.target.value)} />
             </label>
             <label className="tmpl-field">
-              <span>Repeat</span>
+              <span>{zh ? "重复周期" : "Repeat"}</span>
               <select className="tmpl-input tmpl-select" value={freq} onChange={(e) => setFreq(e.target.value)}>
-                <option value="daily">Every day</option>
-                <option value="weekdays">Weekdays</option>
-                <option value="weekends">Weekends</option>
+                <option value="daily">{zh ? "每天" : "Every day"}</option>
+                <option value="weekdays">{zh ? "工作日" : "Weekdays"}</option>
+                <option value="weekends">{zh ? "周末" : "Weekends"}</option>
               </select>
             </label>
           </div>
@@ -424,11 +429,11 @@ function TaskDetail({
               <input type="checkbox" checked={task.enabled} onChange={toggle} />
               <span className="slider" />
             </label>{" "}
-            {task.enabled ? `Active · next ${fmt(task.next_run)}` : "Paused"} · {task.schedule}
+            {task.enabled ? `${zh ? "运行中 · 下次" : "Active · next"} ${fmt(task.next_run)}` : (zh ? "已暂停" : "Paused")} · {task.schedule}
           </div>
         )}
 
-        <div className="sa-sub">Instructions</div>
+        <div className="sa-sub">{zh ? "任务说明" : "Instructions"}</div>
         {editing ? (
           <textarea
             className="tmpl-input tmpl-textarea sched-edit-instr"
@@ -441,9 +446,9 @@ function TaskDetail({
 
         {(task.always_allowed || []).length > 0 && (
           <>
-            <div className="sa-sub">Allowed without asking</div>
+            <div className="sa-sub">{zh ? "无需再次确认的操作" : "Allowed without asking"}</div>
             <div className="dim" style={{ marginBottom: 8, fontSize: 12.5 }}>
-              Standing approvals this automation may use — everything else still asks first.
+              {zh ? "以下权限已持续授权给此自动化；其他操作仍会先征求你的确认。" : "Standing approvals this automation may use — everything else still asks first."}
             </div>
             <div className="sched-grants" data-testid="task-grants">
               {(task.always_allowed || []).map((rule) => (
@@ -454,13 +459,13 @@ function TaskDetail({
                   </span>
                   <button
                     className="link"
-                    title="This automation will ask for approval again"
+                    title={zh ? "撤销后，此自动化执行该操作时会再次请求确认" : "This automation will ask for approval again"}
                     onClick={async () => {
                       await updateAutomation(id, { revoke: rule.entry });
                       refresh();
                     }}
                   >
-                    Revoke
+                    {zh ? "撤销" : "Revoke"}
                   </button>
                 </div>
               ))}
@@ -468,11 +473,11 @@ function TaskDetail({
           </>
         )}
 
-        <div className="sa-sub">Runs</div>
+        <div className="sa-sub">{zh ? "运行记录" : "Runs"}</div>
         <div className="dim" style={{ marginBottom: 8, fontSize: 12.5 }}>
-          Each run is a live conversation — open one to see what the agent did and ask a follow-up.
+          {zh ? "每次运行都会生成一个可继续交流的任务记录；打开后可查看 Atlas 的执行过程并追加要求。" : "Each run is a live conversation — open one to see what the agent did and ask a follow-up."}
         </div>
-        {runs.length === 0 && <div className="dim">No runs yet.</div>}
+        {runs.length === 0 && <div className="dim">{zh ? "暂无运行记录。" : "No runs yet."}</div>}
         {runs.map((r) => (
           <div
             className="sched-run open"
@@ -484,18 +489,18 @@ function TaskDetail({
                 title: task.title,
               })
             }
-            title="Open this run's conversation"
+            title={zh ? "打开本次运行的任务记录" : "Open this run's conversation"}
           >
             <div className="sched-run-row">
               <span>
                 {seenMark !== null && r.started_at > seenMark && (
-                  <span className="run-new-pill" data-testid="run-new">new</span>
+                  <span className="run-new-pill" data-testid="run-new">{zh ? "新" : "new"}</span>
                 )}
                 {fmt(r.started_at)} · <span className={"run-" + r.status}>{r.status}</span> · {r.trigger}
-                {r.artifacts.length > 0 && <span className="dim"> · {r.artifacts.length} file(s)</span>}
+                {r.artifacts.length > 0 && <span className="dim"> · {r.artifacts.length} {zh ? "个文件" : "file(s)"}</span>}
               </span>
               <span className="sched-run-go" aria-hidden>
-                Open ›
+                {zh ? "打开" : "Open"} ›
               </span>
             </div>
             {r.result_text && <div className="sched-run-peek">{r.result_text}</div>}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { chooseFolder } from "../tauri";
 import { Icon } from "./Icon";
+import { useI18n } from "../I18nProvider";
 
 // A single "Give access to a folder" affordance. Collapsed it's one button; expanded it's a path
 // field (Browse on desktop, paste anywhere) + an "Allow writing" checkbox that's OFF by default —
@@ -20,6 +21,8 @@ export function AddFolderForm({
   startOpen?: boolean;
   onDismiss?: () => void;
 }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [open, setOpen] = useState(!!startOpen);
   const [path, setPath] = useState("");
   const [writable, setWritable] = useState(false);
@@ -45,7 +48,7 @@ export function AddFolderForm({
   if (!open) {
     return (
       <button className={"addfolder-trigger" + (compact ? " compact" : "")} onClick={() => setOpen(true)}>
-        <Icon name="folderPlus" size={15} /> Give access to a folder
+        <Icon name="folderPlus" size={15} /> {zh ? "授权访问文件夹" : "Give access to a folder"}
       </button>
     );
   }
@@ -56,7 +59,7 @@ export function AddFolderForm({
         <input
           className="addfolder-path"
           autoFocus
-          placeholder="Choose or paste a folder path…"
+          placeholder={zh ? "选择或粘贴文件夹路径…" : "Choose or paste a folder path…"}
           value={path}
           spellCheck={false}
           onChange={(e) => setPath(e.target.value)}
@@ -65,21 +68,21 @@ export function AddFolderForm({
             else if (e.key === "Escape") reset();
           }}
         />
-        <button className="btn icon-only" onClick={browse} title="Choose location" aria-label="Choose location">
+        <button className="btn icon-only" onClick={browse} title={zh ? "选择位置" : "Choose location"} aria-label={zh ? "选择位置" : "Choose location"}>
           <Icon name="folder" size={15} />
         </button>
       </div>
       <div className="addfolder-actions">
-        <label className="addfolder-write" title="Off = read-only. Tick to let the agent write here.">
+        <label className="addfolder-write" title={zh ? "默认只读；勾选后允许 Atlas 在此处写入文件。" : "Off = read-only. Tick to let the agent write here."}>
           <input type="checkbox" checked={writable} onChange={(e) => setWritable(e.target.checked)} />
-          Allow writes
+          {zh ? "允许写入" : "Allow writes"}
         </label>
         <span className="spacer" />
         <button className="btn" onClick={reset}>
-          Cancel
+          {zh ? "取消" : "Cancel"}
         </button>
         <button className="btn primary" disabled={busy || !path.trim()} onClick={submit}>
-          Add
+          {zh ? "添加" : "Add"}
         </button>
       </div>
     </div>

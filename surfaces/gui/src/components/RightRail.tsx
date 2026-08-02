@@ -12,6 +12,7 @@ import type { TodoItem } from "../types";
 import { AccessSection } from "./AccessSection";
 import { Icon } from "./Icon";
 import { Markdown, OPEN_ARTIFACT_EVENT } from "./Markdown";
+import { useI18n } from "../I18nProvider";
 
 type Panel = "progress" | "artifacts";
 
@@ -76,6 +77,7 @@ export function RightRail({
   openAccessKey = 0,
   onOpenIntegrations,
 }: Props) {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState<Record<Panel, boolean>>({
     progress: true,
     artifacts: true,
@@ -171,13 +173,13 @@ export function RightRail({
         />
       ) : (
         <>
-          <RailSection title="Progress" open={open.progress} onToggle={() => setOpen({ ...open, progress: !open.progress })}>
+          <RailSection title={t("rail.progress")} open={open.progress} onToggle={() => setOpen({ ...open, progress: !open.progress })}>
             <ProgressSummary running={running} toolNames={toolNames} todo={todo} />
           </RailSection>
 
           {showArtifacts && (
           <RailSection
-            title={`Artifacts${artifacts.length ? ` (${artifacts.length})` : ""}`}
+            title={`${t("rail.artifacts")}${artifacts.length ? ` (${artifacts.length})` : ""}`}
             open={open.artifacts}
             onToggle={() => setOpen({ ...open, artifacts: !open.artifacts })}
             action={
@@ -186,17 +188,17 @@ export function RightRail({
                   <button
                     className="rail-mini-btn"
                     onClick={(e) => { e.stopPropagation(); revealArtifact(sessionId, artifacts[0].path, "reveal"); }}
-                    title="Show the folder where these files are saved"
+                    title={t("rail.showFolder")}
                   >
                     <Icon name="folder" size={13} />
                   </button>
                 )}
-                <button className="rail-mini-btn" onClick={(e) => { e.stopPropagation(); refreshArtifacts(); }} title="Refresh artifacts"><Icon name="refresh" size={13} /></button>
+                <button className="rail-mini-btn" onClick={(e) => { e.stopPropagation(); refreshArtifacts(); }} title={t("rail.refresh")}><Icon name="refresh" size={13} /></button>
               </>
             }
           >
             {artifacts.length === 0 ? (
-              <div className="rail-muted">No previewable files yet.</div>
+              <div className="rail-muted">{t("rail.noArtifacts")}</div>
             ) : (
               <div className="artifact-list">
                 {artifacts.slice(0, 16).map((a) => (
@@ -206,9 +208,9 @@ export function RightRail({
                     </span>
                     <span className="artifact-name">
                       {a.name}
-                      <span className="artifact-row-meta">{formatBytes(a.size)} · {formatTime(a.modified_at)}</span>
+                      <span className="artifact-row-meta">{formatBytes(a.size)} · {formatTime(a.modified_at, locale)}</span>
                     </span>
-                    <span className="artifact-open">Open</span>
+                    <span className="artifact-open">{t("common.open")}</span>
                   </button>
                 ))}
               </div>
@@ -236,6 +238,13 @@ export function RightRail({
 }
 
 function ProgressSummary({ running, toolNames, todo }: { running: boolean; toolNames: string[]; todo: TodoItem[] }) {
+  const { locale, t } = useI18n();
+  const progressText = () =>
+    t("rail.working", {
+      details: toolNames.length
+        ? t("rail.toolCalls", { count: toolNames.length })
+        : locale === "zh-CN" ? "。" : ".",
+    });
   if (todo.length) {
     return (
       <div className="rail-todo-list">
@@ -247,7 +256,7 @@ function ProgressSummary({ running, toolNames, todo }: { running: boolean; toolN
         ))}
         {running && (
           <div className="rail-muted">
-            {toolNames.length ? `${toolNames.length} tool call${toolNames.length === 1 ? "" : "s"} so far.` : "Working..."}
+            {progressText()}
           </div>
         )}
       </div>
@@ -256,13 +265,13 @@ function ProgressSummary({ running, toolNames, todo }: { running: boolean; toolN
   if (running) {
     return (
       <div className="rail-muted">
-        Working on this task{toolNames.length ? ` with ${toolNames.length} tool call${toolNames.length === 1 ? "" : "s"} so far.` : "."}
+        {progressText()}
       </div>
     );
   }
   return (
     <div className="rail-muted">
-      For longer multi-step tasks, progress will appear here while OpenWorker plans, uses tools, waits for approval, and produces artifacts.
+      {t("rail.progressIdle")}
     </div>
   );
 }
@@ -310,6 +319,7 @@ function ArtifactViewer({
   // Folder listings: open a child entry in the viewer (files and subfolders alike).
   onOpenEntry?: (path: string) => void;
 }) {
+  const { t } = useI18n();
   const [reloadKey, setReloadKey] = useState(0);
   const isHtml = content?.kind === "html" && !content.error;
   // Best viewed in a real app: spreadsheets, PDFs, and Office docs (pptx/docx can't preview inline)
@@ -318,11 +328,11 @@ function ArtifactViewer({
   return (
     <div className="artifact-viewer">
       <div className="artifact-head">
-        <button className="artifact-icon-btn" onClick={onBack} aria-label="Back to artifacts" title="Back">
+        <button className="artifact-icon-btn" onClick={onBack} aria-label={t("rail.back")} title={t("rail.back")}>
           <Icon name="arrowLeft" size={16} />
         </button>
         <div className="artifact-heading">
-          <div className="artifact-title"><span>Artifacts</span><span className="artifact-sep">/</span><span>{artifact.name}</span></div>
+          <div className="artifact-title"><span>{t("rail.artifacts")}</span><span className="artifact-sep">/</span><span>{artifact.name}</span></div>
           <div className="artifact-path">{artifact.path}</div>
         </div>
         <div className="rail-actions">
@@ -333,8 +343,8 @@ function ArtifactViewer({
                 await onReload();
                 setReloadKey((k) => k + 1);
               }}
-              aria-label="Reload preview"
-              title="Reload"
+              aria-label={t("rail.reload")}
+              title={t("rail.reload")}
             >
               <Icon name="refresh" size={16} />
             </button>
@@ -343,8 +353,8 @@ function ArtifactViewer({
             <button
               className="artifact-icon-btn"
               onClick={() => revealArtifact(sessionId, artifact.path, "open")}
-              aria-label="Open in default app"
-              title="Open in default app"
+              aria-label={t("rail.openDefault")}
+              title={t("rail.openDefault")}
             >
               <Icon name="panelOpen" size={16} />
             </button>
@@ -354,16 +364,16 @@ function ArtifactViewer({
           <button
             className="artifact-icon-btn"
             onClick={() => navigator.clipboard?.writeText(artifact.abs_path || artifact.path)}
-            aria-label="Copy path"
-            title="Copy full path"
+            aria-label={t("rail.copyPath")}
+            title={t("rail.copyPath")}
           >
             <Icon name="copy" size={16} />
           </button>
           <button
             className="artifact-icon-btn"
             onClick={() => revealArtifact(sessionId, artifact.path, "reveal")}
-            aria-label="Show in folder"
-            title="Show in folder"
+            aria-label={t("rail.showInFolder")}
+            title={t("rail.showInFolder")}
           >
             <Icon name="folder" size={16} />
           </button>
@@ -371,7 +381,7 @@ function ArtifactViewer({
       </div>
       <div className="artifact-preview">
         {!content ? (
-          <div className="rail-muted">Loading...</div>
+          <div className="rail-muted">{t("common.loading")}</div>
         ) : content.error ? (
           <div className="rail-error">{content.error}</div>
         ) : content.kind === "html" ? (
@@ -601,7 +611,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatTime(epochSeconds: number): string {
+function formatTime(epochSeconds: number, locale?: string): string {
   if (!epochSeconds) return "";
-  return new Date(epochSeconds * 1000).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(epochSeconds * 1000).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 }
