@@ -27,6 +27,7 @@ import { PersonaGlyph, personaGlyph } from "./personaIcon";
 import { SearchModal } from "./SearchModal";
 import { baseName } from "../paths";
 import { showPersonas } from "../flags";
+import { translate } from "../i18n";
 
 // Session surfaces shown as accordions, in display order. The surfaced personas drive this list
 // (so third-party / Ops personas appear); the hardcoded set is the fallback before personas load.
@@ -113,6 +114,8 @@ function ConnectorDot({ subs }: { subs?: string[] }) {
 }
 
 interface Props {
+  productName: string;
+  productLocale: string;
   agent: string;
   workspace: string;
   surfaces: SurfaceVisibility;
@@ -1002,7 +1005,7 @@ export function Sidebar(props: Props) {
             <Icon name="sidebar" size={16} />
           </button>
         )}
-        <div className="brand-wordmark text-[15px]">OpenWorker<span className="beta-tag">BETA</span></div>
+        <div className="brand-wordmark text-[15px]">{props.productName}<span className="beta-tag">{translate(props.productLocale, "app.alpha")}</span></div>
       </div>
 
       {/* New session: split button — primary starts the last-used persona; ▾ picks a specific one. */}

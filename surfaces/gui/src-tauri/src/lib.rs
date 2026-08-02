@@ -90,8 +90,19 @@ fn server_bin() -> PathBuf {
     p
 }
 
-/// Mirror of `coworker.secrets.state_dir()` so the shell and server agree on `desktop.json`.
-/// Windows: `%APPDATA%\coworker`; POSIX: `~/.config/coworker`. `COWORKER_STATE_DIR` overrides.
+fn atlas_product() -> &'static str {
+    option_env!("ATLAS_PRODUCT").unwrap_or("creator")
+}
+
+fn atlas_data_dir_name() -> &'static str {
+    match atlas_product() {
+        "enterprise" | "atlas-enterprise" => "com.atlas.enterprise",
+        _ => "com.atlas.creator",
+    }
+}
+
+/// Mirror the Atlas product data-directory contract so the shell and sidecar agree.
+/// `COWORKER_STATE_DIR` remains the explicit deployment/test override.
 fn state_dir() -> PathBuf {
     if let Ok(d) = std::env::var("COWORKER_STATE_DIR") {
         return PathBuf::from(d);
@@ -99,11 +110,11 @@ fn state_dir() -> PathBuf {
     #[cfg(windows)]
     {
         if let Ok(appdata) = std::env::var("APPDATA") {
-            return PathBuf::from(appdata).join("coworker");
+            return PathBuf::from(appdata).join(atlas_data_dir_name());
         }
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    PathBuf::from(home).join(".config").join("coworker")
+    PathBuf::from(home).join(".config").join(atlas_data_dir_name())
 }
 
 fn desktop_prefs_path() -> PathBuf {
@@ -628,7 +639,14 @@ pub fn run() {
             // 1. Start the Python server sidecar on the chosen port (inherits our env).
             let mut server_cmd = Command::new(server_bin());
             server_cmd
-                .args(["--host", "127.0.0.1", "--port", &port.to_string()])
+                .args([
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    &port.to_string(),
+                    "--product",
+                    atlas_product(),
+                ])
                 // The sidecar self-exits if we die abruptly (dev-watcher restart, crash) —
                 // belt-and-suspenders alongside the RunEvent::ExitRequested kill below.
                 // The explicit PID matters: under PyInstaller onefile the python process is a
@@ -637,6 +655,7 @@ pub fn run() {
                 .env("COWORKER_EXIT_WITH_PARENT", "1")
                 .env("COWORKER_PARENT_PID", std::process::id().to_string())
                 .env("COWORKER_API_TOKEN", &api_token)
+                .env("ATLAS_PRODUCT", atlas_product())
                 // This GUI app has no console, so a console-subsystem child would inherit
                 // invalid std handles and crash a few seconds in when uvicorn writes its logs
                 // (the "Starting coworker…" freeze on Windows). Hand it real handles: the

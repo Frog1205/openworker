@@ -27,7 +27,9 @@
 [CmdletBinding()]
 param(
     # Which installer bundles to produce. Both by default.
-    [string]$Bundles = "nsis,msi"
+    [string]$Bundles = "nsis,msi",
+    [ValidateSet("creator", "enterprise")]
+    [string]$Product = "creator"
 )
 $ErrorActionPreference = "Stop"
 
@@ -36,6 +38,8 @@ $Platform = Split-Path -Parent $Here
 $Gui      = Join-Path $Platform "surfaces\gui"
 $Venv     = Join-Path $Platform ".venv"
 $PyInst   = Join-Path $Venv "Scripts\pyinstaller.exe"
+$ProductConfig = Join-Path $Platform "atlas\core\build\$Product.tauri.conf.json"
+$env:ATLAS_PRODUCT = $Product
 
 function Require-Cmd($name) {
     if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
@@ -86,13 +90,13 @@ Write-Host "==> [3/3] tauri build (--bundles $Bundles)" -ForegroundColor Cyan
 # signing key env is present (CI secret TAURI_SIGNING_PRIVATE_KEY). Keyless builds skip
 # the overlay so dev builds keep working; keyless RELEASES strand installs without
 # auto-update.
-$UpdaterArgs = @()
+$UpdaterArgs = @("--config", $ProductConfig)
 if ($env:TAURI_SIGNING_PRIVATE_KEY) {
     # Pass the overlay as a FILE: inline JSON loses its quotes through the
     # PowerShell -> npm.cmd -> cmd hop ("key must be a string", v0.1.3 run).
     $Overlay = Join-Path ([IO.Path]::GetTempPath()) "ocw-updater-overlay.json"
     Set-Content -Path $Overlay -Value '{"bundle":{"createUpdaterArtifacts":true}}' -Encoding ascii
-    $UpdaterArgs = @("--config", $Overlay)
+    $UpdaterArgs += @("--config", $Overlay)
 } else {
     Write-Host "    WARNING: no updater signing key - building WITHOUT auto-update artifacts (not releasable)." -ForegroundColor Yellow
 }

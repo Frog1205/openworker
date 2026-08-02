@@ -4,6 +4,7 @@ import {
   finalizeAutomationRun,
   getArtifacts,
   getHealth,
+  getProduct,
   getRecentWorkspaces,
   getSessionMessages,
   getSessions,
@@ -27,6 +28,7 @@ import {
   type RecentWorkspace,
   type SurfaceVisibility,
   type WorkspaceCommandTrust,
+  type ProductContext,
 } from "./api";
 import type {
   ApprovalDecision,
@@ -42,6 +44,7 @@ import { baseName } from "./paths";
 import { itemsFromMessages } from "./itemsFromMessages";
 import { addTurnUsage, emptyUsage, usageFromMessages } from "./usage";
 import { streamMode } from "./streamGate";
+import { translate } from "./i18n";
 import { InboxItemCard } from "./components/InboxItemCard";
 import { isTauri, platformOS, startWindowDrag } from "./tauri";
 import { Icon } from "./components/Icon";
@@ -153,6 +156,9 @@ function fallbackWorkspace(current: string | null, projects: RecentWorkspace[]):
 }
 
 export function App() {
+  const [product, setProduct] = useState<ProductContext | null>(null);
+  const productName = product?.name || "Atlas Creator";
+  const locale = product?.locale || "zh-CN";
   const [workspace, setWorkspace] = useState<string | null>(null);
   const [branch, setBranch] = useState<string | null>(null);
   const [showGate, setShowGate] = useState(false);
@@ -455,6 +461,7 @@ export function App() {
         .then(async (h) => {
           if (cancelled) return;
           setModel(h.model);
+          getProduct().then(setProduct).catch(() => {});
           // First-run setup wizard (desktop): show until the user completes/dismisses it.
           if (isTauri()) {
             getSettings()
@@ -1187,7 +1194,7 @@ export function App() {
         {overlay && (
           <div className="titlebar-drag" data-tauri-drag-region>
             <span className="titlebar-brand brand-wordmark">
-              <Icon name="logo" size={13} className="mark" /> OpenWorker<span className="beta-tag">BETA</span>
+              <Icon name="logo" size={13} className="mark" /> {productName}<span className="beta-tag">{translate(locale, "app.alpha")}</span>
             </span>
           </div>
         )}
@@ -1202,8 +1209,10 @@ export function App() {
           <Icon name="logo" size={38} />
         </div>
         <div className="boot-text">
-          {resumedExisting ? "Restoring your session…" : "Starting OpenWorker…"}
-          <span className="beta-tag">BETA</span>
+          {resumedExisting
+            ? translate(locale, "boot.restoring")
+            : translate(locale, "boot.starting", { product: productName })}
+          <span className="beta-tag">{translate(locale, "app.alpha")}</span>
         </div>
       </div>
     );
@@ -1309,6 +1318,8 @@ export function App() {
         />
       )}
       <Sidebar
+        productName={productName}
+        productLocale={locale}
         agent={agent}
         workspace={workspace || ""}
         surfaces={surfaces}

@@ -43,6 +43,25 @@ export interface Health {
   model: string;
 }
 
+export interface ProductContext {
+  product_id: string;
+  product_type: "creator" | "enterprise";
+  name: string;
+  display_name_zh: string;
+  locale: "zh-CN" | "en-US";
+  supported_locales: string[];
+  theme: "creator" | "enterprise";
+  policy_profile: string;
+  feature_flags: Record<string, boolean>;
+  application_identifier: string;
+  data_directory: string;
+  tagline_zh: string;
+  tagline_en: string;
+  oauth_mode: "manual" | "atlas" | "self-hosted";
+  telemetry_enabled: boolean;
+  updater_endpoints: string[];
+}
+
 export interface RecentWorkspace {
   path: string;
   name: string;
@@ -59,6 +78,12 @@ export interface WorkspaceCommandTrust {
 
 export async function getHealth(): Promise<Health> {
   const res = await fetch(`${httpBase()}/v1/health`);
+  return res.json();
+}
+
+export async function getProduct(): Promise<ProductContext> {
+  const res = await fetch(`${httpBase()}/v1/product`);
+  if (!res.ok) throw new Error(`product context unavailable (${res.status})`);
   return res.json();
 }
 
