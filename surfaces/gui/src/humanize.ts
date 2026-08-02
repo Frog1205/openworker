@@ -14,7 +14,7 @@ export interface HumanLine {
 }
 
 const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-const baseName = (p: string) => p.replace(/\/+$/, "").split("/").pop() || p;
+const baseName = (p: string) => p.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || p;
 
 // send_message targets are "platform:chat" or "platform:chat:thread" — show the platform
 // by name and the last human-ish segment of the chat id.
@@ -26,8 +26,39 @@ function messageTarget(target: string): { platform: string; tail: string } {
   return { platform: names[platform] || platform, tail };
 }
 
-export function humanizeTool(name: string, args: any): HumanLine {
+export function humanizeTool(name: string, args: any, locale = "en-US"): HumanLine {
   const a = args && typeof args === "object" ? args : {};
+  if (locale === "zh-CN") {
+    switch (name) {
+      case "run_shell": {
+        const cmd = trunc(String(a.command ?? ""), 60);
+        const desc = typeof a.description === "string" && a.description.trim() ? a.description.trim() : "";
+        return { pre: a.run_in_background ? "已在后台启动：" : "已执行命令：", obj: cmd, ...(desc ? { post: ` — ${desc}` } : {}) };
+      }
+      case "shell_task_output": return { pre: "已检查后台命令状态" };
+      case "shell_task_kill": return { pre: "已停止后台命令" };
+      case "read_file": return { pre: "已读取 ", obj: baseName(String(a.path ?? "文件")) };
+      case "write_file": return { pre: "已写入 ", obj: baseName(String(a.path ?? "文件")) };
+      case "replace_in_file": case "apply_patch": case "apply_unified_diff":
+        return { pre: "已修改 ", obj: a.path ? baseName(String(a.path)) : "文件" };
+      case "grep": return { pre: "已在代码中搜索 ", obj: `“${trunc(String(a.pattern ?? ""), 40)}”` };
+      case "git_log": return { pre: "已查看近期 Git 提交记录" };
+      case "todo_write": {
+        const items = Array.isArray(a.todos) ? a.todos : Array.isArray(a.items) ? a.items : [];
+        if (items.length === 1) return { pre: "已更新计划：", obj: `“${trunc(String(items[0]?.content ?? ""), 70)}”` };
+        return { pre: `已更新计划，共 ${items.length} 项` };
+      }
+      case "send_message": { const { platform, tail } = messageTarget(String(a.target ?? "")); return tail ? { pre: `已通过 ${platform} 发送消息至 `, obj: tail } : { pre: "已发送消息" }; }
+      case "web_search": return { pre: "已搜索网络：", obj: `“${trunc(String(a.query ?? ""), 60)}”` };
+      case "web_fetch": { let host = String(a.url ?? ""); try { host = new URL(host).host || host; } catch {} return { pre: "已读取网页：", obj: trunc(host, 50) }; }
+      case "explore": return { pre: "已派出子智能体调研：", obj: `“${trunc(String(a.task ?? a.prompt ?? ""), 60)}”` };
+      case "load_skill": return { pre: "已调用技能：", obj: String(a.name ?? "") };
+      case "ask_user": return { pre: "已向你提出问题" };
+      case "propose_plan": return { pre: "已提交执行计划" };
+      case "request_directory": return { pre: "已请求文件夹访问权限：", obj: String(a.path ?? "") };
+      default: { const rest = trunc(shortArgs(a), 80); return { pre: `已调用 ${name}`, ...(rest ? { post: ` — ${rest}` } : {}) }; }
+    }
+  }
   switch (name) {
     case "run_shell": {
       const cmd = trunc(String(a.command ?? ""), 60);
@@ -107,8 +138,20 @@ export function humanizeTool(name: string, args: any): HumanLine {
 
 // The approval card's headline (§35): the ask, phrased as the action being decided.
 // run_shell leads with the model's own description ("Run a command — fetch stock data").
-export function humanizeApprovalTitle(name: string, args: any): HumanLine {
+export function humanizeApprovalTitle(name: string, args: any, locale = "en-US"): HumanLine {
   const a = args && typeof args === "object" ? args : {};
+  if (locale === "zh-CN") {
+    switch (name) {
+      case "write_file": return { pre: "写入文件 ", obj: baseName(String(a.path ?? "文件")) };
+      case "replace_in_file": case "apply_patch": case "apply_unified_diff": return { pre: "修改 ", obj: a.path ? baseName(String(a.path)) : "文件" };
+      case "run_shell": { const desc = typeof a.description === "string" && a.description.trim() ? a.description.trim() : ""; return { pre: "执行命令", ...(desc ? { post: ` — ${desc}` } : {}) }; }
+      case "send_message": { const { tail } = messageTarget(String(a.target ?? "")); return tail ? { pre: "发送消息至 ", obj: tail } : { pre: "发送消息" }; }
+      case "send_file": { const { tail } = messageTarget(String(a.target ?? "")); return tail ? { pre: "发送文件至 ", obj: tail } : { pre: "发送文件" }; }
+      case "create_scheduled_task": return a.title ? { pre: "创建自动化 ", obj: `“${trunc(String(a.title), 60)}”` } : { pre: "创建自动化" };
+      case "save_skill": return a.name ? { pre: "将技能 ", obj: String(a.name), post: " 添加到技能库" } : { pre: "添加技能到技能库" };
+      default: return { pre: `调用 ${name}` };
+    }
+  }
   switch (name) {
     case "write_file":
       return { pre: "Write ", obj: baseName(String(a.path ?? "a file")) };
@@ -146,8 +189,17 @@ export function humanizeApprovalTitle(name: string, args: any): HumanLine {
 }
 
 // Approvals with no executed tool call (typically declined): the ask, phrased as intent.
-export function humanizeAsk(name: string, args: any): HumanLine {
+export function humanizeAsk(name: string, args: any, locale = "en-US"): HumanLine {
   const a = args && typeof args === "object" ? args : {};
+  if (locale === "zh-CN") {
+    switch (name) {
+      case "run_shell": return { pre: "原计划执行 ", obj: trunc(String(a.command ?? ""), 60) };
+      case "write_file": return { pre: "原计划写入 ", obj: baseName(String(a.path ?? "文件")) };
+      case "replace_in_file": case "apply_patch": case "apply_unified_diff": return { pre: "原计划修改 ", obj: a.path ? baseName(String(a.path)) : "文件" };
+      case "send_message": { const { platform, tail } = messageTarget(String(a.target ?? "")); return tail ? { pre: "原计划发送消息至 ", obj: tail, post: `（${platform}）` } : { pre: "原计划发送消息" }; }
+      default: return { pre: `原计划调用 ${name}` };
+    }
+  }
   switch (name) {
     case "run_shell":
       return { pre: "Wanted to run ", obj: trunc(String(a.command ?? ""), 60) };
