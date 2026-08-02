@@ -44,7 +44,7 @@ import { baseName } from "./paths";
 import { itemsFromMessages } from "./itemsFromMessages";
 import { addTurnUsage, emptyUsage, usageFromMessages } from "./usage";
 import { streamMode } from "./streamGate";
-import { translate } from "./i18n";
+import { useI18n } from "./I18nProvider";
 import { InboxItemCard } from "./components/InboxItemCard";
 import { isTauri, platformOS, startWindowDrag } from "./tauri";
 import { Icon } from "./components/Icon";
@@ -156,9 +156,12 @@ function fallbackWorkspace(current: string | null, projects: RecentWorkspace[]):
 }
 
 export function App() {
+  const { locale, t } = useI18n();
   const [product, setProduct] = useState<ProductContext | null>(null);
   const productName = product?.name || "Atlas Creator";
-  const locale = product?.locale || "zh-CN";
+  useEffect(() => {
+    document.title = t("browser.title", { product: productName });
+  }, [productName, locale, t]);
   const [workspace, setWorkspace] = useState<string | null>(null);
   const [branch, setBranch] = useState<string | null>(null);
   const [showGate, setShowGate] = useState(false);
@@ -1170,7 +1173,7 @@ export function App() {
   const subtitleParts = [modelDisplay];
   if (isProjectScoped(personaOf(agent)) && workspace) subtitleParts.push(baseName(workspace));
   const activeInfo = sessions.find((s) => s.session_id === sessionId);
-  const activeTitle = activeInfo?.title || "New session";
+  const activeTitle = activeInfo?.title || t("top.newSession");
 
   const desktop = isTauri();
   // Dev-only: `?overlay=1` simulates the desktop overlay layout in the browser (adds the
@@ -1194,7 +1197,7 @@ export function App() {
         {overlay && (
           <div className="titlebar-drag" data-tauri-drag-region>
             <span className="titlebar-brand brand-wordmark">
-              <Icon name="logo" size={13} className="mark" /> {productName}<span className="beta-tag">{translate(locale, "app.alpha")}</span>
+              <Icon name="logo" size={13} className="mark" /> {productName}<span className="beta-tag">{t("app.alpha")}</span>
             </span>
           </div>
         )}
@@ -1210,9 +1213,9 @@ export function App() {
         </div>
         <div className="boot-text">
           {resumedExisting
-            ? translate(locale, "boot.restoring")
-            : translate(locale, "boot.starting", { product: productName })}
-          <span className="beta-tag">{translate(locale, "app.alpha")}</span>
+            ? t("boot.restoring")
+            : t("boot.starting", { product: productName })}
+          <span className="beta-tag">{t("app.alpha")}</span>
         </div>
       </div>
     );
@@ -1319,7 +1322,6 @@ export function App() {
       )}
       <Sidebar
         productName={productName}
-        productLocale={locale}
         agent={agent}
         workspace={workspace || ""}
         surfaces={surfaces}
@@ -1416,16 +1418,16 @@ export function App() {
                 <button
                   className="topbar-icon-btn"
                   onClick={() => startNewSession()}
-                  aria-label="New session"
-                  title="New session"
+                  aria-label={t("nav.newSession")}
+                  title={t("nav.newSession")}
                 >
                   <Icon name="plus" size={16} />
                 </button>
                 <button
                   className="topbar-icon-btn"
                   onClick={() => setSearchOpen(true)}
-                  aria-label="Search"
-                  title="Search"
+                  aria-label={t("nav.search")}
+                  title={t("nav.search")}
                 >
                   <Icon name="search" size={16} />
                 </button>
@@ -1464,7 +1466,7 @@ export function App() {
                 title="Show files this conversation produced"
               >
                 <Icon name="file" size={14} />
-                <span>Artifacts</span>
+                <span>{t("rail.artifacts")}</span>
                 <span className="topbar-artifacts-count">{artifactCount}</span>
               </button>
             )}
@@ -1628,7 +1630,7 @@ export function App() {
                   ? "Ask the coder to build, fix, or explain…  (drop or paste files)"
                   : agent === "chat"
                     ? "Ask anything…  (drop or paste files)"
-                    : "Ask the coworker…  (drop or paste files)"
+                    : t("composer.placeholder")
               }
               approvalSlot={
                 // Live inline cards are for ATTENDED sessions only; when Unattended the prompt is

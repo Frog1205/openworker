@@ -75,7 +75,7 @@ describe("Composer voice input (§37)", () => {
     fireEvent.click(await screen.findByLabelText("Start dictation"));
     const stop = await screen.findByLabelText("Stop dictation");
     expect(document.querySelector(".voice-wave-bars")).toBeTruthy();
-    expect(screen.getByLabelText("Send").hasAttribute("disabled")).toBe(true);
+    expect(screen.getByLabelText("Start task").hasAttribute("disabled")).toBe(true);
 
     invoke.mockImplementation(async (cmd: string) => {
       if (cmd === "stop_dictation") return "hello from the mic";
@@ -84,7 +84,7 @@ describe("Composer voice input (§37)", () => {
     });
     fireEvent.click(stop);
     await screen.findByLabelText("Start dictation"); // recording UI wound down
-    const box = screen.getByPlaceholderText(/Ask the coworker/) as HTMLTextAreaElement;
+    const box = screen.getByPlaceholderText(/Atlas/) as HTMLTextAreaElement;
     expect(box.value).toBe("hello from the mic"); // a DRAFT — nothing auto-sent
     expect(document.querySelector(".voice-wave-bars")).toBeNull();
   });

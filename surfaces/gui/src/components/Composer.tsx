@@ -6,6 +6,7 @@ import { formatTokens, totalTokens } from "../usage";
 import { Dropdown, type Option } from "./Dropdown";
 import { Icon } from "./Icon";
 import { Toggle } from "./Toggle";
+import { useI18n } from "../I18nProvider";
 import {
   cancelDictation,
   getDictationLevel,
@@ -20,12 +21,6 @@ import {
 // polished enough to ship, and Custom (config.toml auto-allow rules) is a power-user mode
 // with no in-app explanation. The server still honors both — a session already in one of
 // those modes keeps working; the picker just doesn't offer them.
-const PERMISSION_OPTIONS: Option[] = [
-  { value: "discuss", label: "Discuss", description: "Chat and explore — no edits or commands" },
-  { value: "interactive", label: "Ask for approval", description: "Ask before edits and commands" },
-  { value: "auto", label: "Full access", description: "Run everything without asking" },
-];
-
 // No hardcoded model fallback: until the server supplies the list (a few seconds after a
 // cold app boot), the picker renders a disabled "Loading models…" chip. A baked-in list
 // goes stale and silently offers ids the backend never confirmed (caught 2026-07-21).
@@ -92,6 +87,7 @@ interface Props {
 }
 
 export function Composer(props: Props) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // "/" force-run (SKILLS-SPEC §4.1 #3). The popup derives from the draft: it is open while
@@ -513,7 +509,7 @@ export function Composer(props: Props) {
         <textarea
           ref={textareaRef}
           className="w-full block px-3.5 pt-3.5 pb-1.5 text-[14.5px]"
-          placeholder={props.placeholder || "Ask the coworker…  (drop or paste files)"}
+          placeholder={props.placeholder || t("composer.placeholder")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKey}
@@ -527,8 +523,8 @@ export function Composer(props: Props) {
           <div className="relative">
             <button
               className={iconBtn + (attachMenuOpen ? " bg-paper text-ink" : "")}
-              title="Attach"
-              aria-label="Attach"
+              title={t("composer.attach")}
+              aria-label={t("composer.attach")}
               onClick={() => setAttachMenuOpen((v) => !v)}
             >
               <Icon name="plus" size={17} />
@@ -605,10 +601,10 @@ export function Composer(props: Props) {
             <button
               className="pill model-warn chip"
               onClick={() => props.onConnectModel?.()}
-              title="Connect a model"
-              aria-label="No model connected — connect a model"
+              title={t("composer.connectModel")}
+              aria-label={t("composer.connectModel")}
             >
-              <span className="pill-label">No model</span>
+              <span className="pill-label">{t("composer.noModel")}</span>
               <span className="model-warn-ico" aria-hidden>⚠</span>
             </button>
           ) : modelsLoaded ? (
@@ -620,7 +616,7 @@ export function Composer(props: Props) {
               data-testid="models-loading"
               title="Fetching the model list from the server"
             >
-              <span className="pill-label">Loading models…</span>
+              <span className="pill-label">{t("composer.modelsLoading")}</span>
             </button>
           ))}
 
@@ -653,7 +649,7 @@ export function Composer(props: Props) {
           {/* send / stop */}
           {props.running ? (
             <button className="btn danger" onClick={props.onInterrupt}>
-              ⏹ Stop
+              ⏹ {t("composer.stop")}
             </button>
           ) : (
             <button
@@ -666,7 +662,7 @@ export function Composer(props: Props) {
               onClick={submit}
               disabled={!props.connected || !!dictation?.recording || !!dictationBusy}
               title={needsModel ? "Connect a model to send" : undefined}
-              aria-label="Send"
+              aria-label={t("composer.send")}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 19V5M5 12l7-7 7 7" />
@@ -833,8 +829,14 @@ function ModeMenu({
   unattended?: boolean;
   onUnattendedChange?: (on: boolean) => void;
 }) {
+  const { t } = useI18n();
+  const permissionOptions: Option[] = [
+    { value: "discuss", label: t("permission.discuss.label"), description: t("permission.discuss.description") },
+    { value: "interactive", label: t("permission.interactive.label"), description: t("permission.interactive.description") },
+    { value: "auto", label: t("permission.auto.label"), description: t("permission.auto.description") },
+  ];
   const [open, setOpen] = useState(false);
-  const current = PERMISSION_OPTIONS.find((o) => o.value === mode);
+  const current = permissionOptions.find((o) => o.value === mode);
   return (
     <div className="relative">
       {/* Borderless, and it names the CHOSEN mode (owner ask 2026-07-11, competitor composer
@@ -862,7 +864,7 @@ function ModeMenu({
             role="menu"
             data-testid="mode-menu"
           >
-            {PERMISSION_OPTIONS.map((o) => (
+            {permissionOptions.map((o) => (
               <button
                 key={o.value}
                 className="w-full flex flex-col items-start px-2.5 py-1.5 rounded-lg text-left hover:bg-paper"

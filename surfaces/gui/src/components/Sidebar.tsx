@@ -27,7 +27,7 @@ import { PersonaGlyph, personaGlyph } from "./personaIcon";
 import { SearchModal } from "./SearchModal";
 import { baseName } from "../paths";
 import { showPersonas } from "../flags";
-import { translate } from "../i18n";
+import { useI18n } from "../I18nProvider";
 
 // Session surfaces shown as accordions, in display order. The surfaced personas drive this list
 // (so third-party / Ops personas appear); the hardcoded set is the fallback before personas load.
@@ -115,7 +115,6 @@ function ConnectorDot({ subs }: { subs?: string[] }) {
 
 interface Props {
   productName: string;
-  productLocale: string;
   agent: string;
   workspace: string;
   surfaces: SurfaceVisibility;
@@ -174,6 +173,7 @@ const compactAge = (iso?: string | null): string => {
 // Sessions shown per group before "Show more" comes from Settings (sessions_peek, default 5).
 
 export function Sidebar(props: Props) {
+  const { locale, setLocale, t } = useI18n();
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   // The account row (§26): cloud sign-in status drives the avatar/name/dot; refreshed on
@@ -710,7 +710,7 @@ export function Sidebar(props: Props) {
     return (
     <div className="relative flex items-center justify-between px-1.5 mb-1" data-testid="recent-header">
       <span className="text-[10.5px] uppercase tracking-[0.07em] text-faint font-semibold">
-        Recent
+        {t("nav.recent")}
       </span>
       <button
         className="w-6 h-6 grid place-items-center rounded-md text-faint hover:text-ink hover:bg-paper -mr-1"
@@ -1005,7 +1005,17 @@ export function Sidebar(props: Props) {
             <Icon name="sidebar" size={16} />
           </button>
         )}
-        <div className="brand-wordmark text-[15px]">{props.productName}<span className="beta-tag">{translate(props.productLocale, "app.alpha")}</span></div>
+        <div className="brand-wordmark text-[15px]">{props.productName}<span className="beta-tag">{t("app.alpha")}</span></div>
+        <select
+          className="ml-auto max-w-[82px] rounded-md border border-line bg-panel px-1.5 py-1 text-[11px] text-muted outline-none hover:text-ink"
+          aria-label={t("locale.label")}
+          title={t("locale.label")}
+          value={locale}
+          onChange={(event) => setLocale(event.target.value === "en-US" ? "en-US" : "zh-CN")}
+        >
+          <option value="zh-CN">{t("locale.zh")}</option>
+          <option value="en-US">{t("locale.en")}</option>
+        </select>
       </div>
 
       {/* New session: split button — primary starts the last-used persona; ▾ picks a specific one. */}
@@ -1023,7 +1033,7 @@ export function Sidebar(props: Props) {
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-left text-muted hover:bg-paper hover:text-ink"
           onClick={() => setSearchModalOpen(true)}
         >
-          <Icon name="search" size={15} className="shrink-0" /> Search
+          <Icon name="search" size={15} className="shrink-0" /> {t("nav.search")}
         </button>
       </div>
 
@@ -1039,7 +1049,7 @@ export function Sidebar(props: Props) {
           onClick={props.onOpenScheduled}
         >
           <Icon name="clock" size={15} className="shrink-0" />
-          <span className="flex-1">Automations</span>
+          <span className="flex-1">{t("nav.automations")}</span>
         </button>
       </div>
 
@@ -1100,7 +1110,7 @@ export function Sidebar(props: Props) {
             <div className="space-y-0.5">
               {recentSessions.length === 0 ? (
                 <div className="px-2 py-1.5 text-[12px] text-faint leading-snug">
-                  {normalizedQuery ? "No matching conversations." : "No conversations yet."}
+                  {normalizedQuery ? t("nav.noMatchingConversations") : t("nav.noConversations")}
                 </div>
               ) : (
                 <>
@@ -1114,8 +1124,8 @@ export function Sidebar(props: Props) {
                       onClick={() => setRecentExpanded((v) => !v)}
                     >
                       {recentExpanded
-                        ? "Show less"
-                        : `Show ${recentSessions.length - RECENT_PEEK} more`}
+                        ? t("nav.showLess")
+                        : t("nav.showMore", { count: recentSessions.length - RECENT_PEEK })}
                     </button>
                   )}
                 </>
@@ -1149,7 +1159,7 @@ export function Sidebar(props: Props) {
                 ) : (
                   <>
                     <div className="px-3 py-1.5 text-[11px] text-faint border-b border-line">
-                      Not signed in — one-click connections need OpenWorker Cloud
+                      {t("account.notSignedInDetail")}
                     </div>
                     <button
                       className="w-full flex items-center gap-2.5 px-3 py-1.5 mb-1 text-[13px] text-left text-accent hover:bg-paper"
@@ -1167,33 +1177,32 @@ export function Sidebar(props: Props) {
                         });
                       }}
                     >
-                      <Icon name="plug" size={15} className="shrink-0" /> Sign in to OpenWorker
-                      Cloud
+                      <Icon name="plug" size={15} className="shrink-0" /> {t("account.signIn")}
                     </button>
                   </>
                 )}
                 {appMenuItem(
                   "inbox",
-                  "Inbox",
+                  t("menu.inbox"),
                   props.onOpenInbox,
                   props.inboxActive,
                   <AttnBadge n={totalAttention} />,
                 )}
-                {appMenuItem("plug", "Connectors", props.onOpenIntegrations, props.integrationsActive)}
+                {appMenuItem("plug", t("menu.connectors"), props.onOpenIntegrations, props.integrationsActive)}
                 <div className="h-px bg-line my-1 mx-2" />
                 {appMenuItem(
                   "gear",
-                  "Settings",
+                  t("menu.settings"),
                   props.onManage,
                   false,
                   <span className="text-[11px] text-faint">⌘ ,</span>,
                 )}
-                {appMenuItem("clock", "Automations", props.onOpenScheduled, props.scheduledActive)}
-                {appMenuItem("audit", "Activity", props.onOpenAudit, props.auditActive)}
+                {appMenuItem("clock", t("nav.automations"), props.onOpenScheduled, props.scheduledActive)}
+                {appMenuItem("audit", t("menu.activity"), props.onOpenAudit, props.auditActive)}
                 {cloud?.signed_in && (
                   <>
                     <div className="h-px bg-line my-1 mx-2" />
-                    {appMenuItem("signOut", "Sign out", async () => {
+                    {appMenuItem("signOut", t("menu.signOut"), async () => {
                       await cloudLogout().catch(() => {});
                       announceCloudChanged();
                     })}
@@ -1229,7 +1238,7 @@ export function Sidebar(props: Props) {
               {cloud?.signed_in ? accountName.slice(0, 1).toUpperCase() : "?"}
             </span>
             <span className={"truncate " + (cloud?.signed_in ? "" : "text-muted")}>
-              {cloud?.signed_in ? accountName : "Not signed in"}
+              {cloud?.signed_in ? accountName : t("account.notSignedIn")}
             </span>
             {cloud?.signed_in && (
               <span
@@ -1302,6 +1311,7 @@ function NewSessionSplit({
   onNew: (agent: string) => void;
   onManage: () => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const enabled = (personas || []).filter((p) => p.enabled);
   // With a single enabled persona there is nothing to pick — the split collapses to a plain
@@ -1318,13 +1328,13 @@ function NewSessionSplit({
           }
           onClick={() => onNew(solo && enabled.length === 1 ? enabled[0].id : current)}
         >
-          <Icon name="plus" size={15} className="shrink-0" /> New session
+          <Icon name="plus" size={15} className="shrink-0" /> {t("nav.newSession")}
         </button>
         {!solo && (
           <button
             className="px-2.5 rounded-r-lg bg-accent text-white border-l border-white/25 hover:opacity-95 flex items-center"
-            title="Start with a specific persona"
-            aria-label="Choose a persona"
+            title={t("nav.startAs")}
+            aria-label={t("nav.chooseAgent")}
             onClick={() => setOpen((v) => !v)}
           >
             <Icon name="chevronDown" size={13} />
@@ -1336,7 +1346,7 @@ function NewSessionSplit({
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div className="newsplit-menu absolute left-3 right-3 mt-1 z-30 bg-panel border border-line rounded-xl2 shadow-xl p-1">
             <div className="px-2 py-1 text-[10.5px] uppercase tracking-[0.06em] text-faint font-semibold">
-              Start a session as
+              {t("nav.startAs")}
             </div>
             {enabled.map((p) => (
               <button
@@ -1369,7 +1379,7 @@ function NewSessionSplit({
                     onManage();
                   }}
                 >
-                  Manage personas…
+                  {t("nav.manageAgents")}
                 </button>
               </div>
             )}

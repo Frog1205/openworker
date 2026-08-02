@@ -36,6 +36,7 @@ import { ConnectSetup } from "./ManageTabs";
 import { RootRow } from "./RootRow";
 import { ChannelPicker } from "./SubscriptionsChip";
 import { Toggle } from "./Toggle";
+import { useI18n } from "../I18nProvider";
 
 // A channel address's platform: "slack:C0123" → "slack"; a bare id or "#mention" defaults to
 // slack (the backend's own default when no platform prefix is given).
@@ -69,6 +70,7 @@ export function AccessSection({
   openKey?: number;
   onOpenIntegrations?: () => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [conns, setConns] = useState<SessionConnections | null>(null);
   const [byName, setByName] = useState<ConnectorMap>({});
@@ -228,7 +230,7 @@ export function AccessSection({
       <div className="rail-section-head">
         <button className="rail-section-toggle" onClick={() => setOpen((v) => !v)} data-testid="access-toggle">
           <Icon name={open ? "chevronDown" : "chevronRight"} size={14} className="rail-chev" />
-          <span>Access</span>
+          <span>{t("rail.access")}</span>
           <span
             className="ml-auto min-w-0 truncate text-[11px] font-normal text-faint"
             data-testid="access-summary"
@@ -239,7 +241,7 @@ export function AccessSection({
         </button>
       </div>
       {open && (
-        <div className="rail-section-body" role="region" aria-label="Session access">
+        <div className="rail-section-body" role="region" aria-label={t("rail.sessionAccess")}>
           {connectFor ? (
             <ConnectInline
               c={connectFor}

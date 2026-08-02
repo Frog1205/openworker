@@ -214,7 +214,7 @@ describe("New-session split button", () => {
     await screen.findByText("incident watch");
 
     // No ▾ — nothing to pick; the primary button starts the sole enabled persona.
-    await waitFor(() => expect(screen.queryByLabelText("Choose a persona")).toBeNull());
+    await waitFor(() => expect(screen.queryByLabelText("Choose an agent")).toBeNull());
     fireEvent.click(container.querySelector(".newsplit-primary")!);
     expect(baseProps.onNewSession).toHaveBeenCalledWith("cowork");
   });
@@ -233,21 +233,21 @@ describe("New-session split button", () => {
     expect(baseProps.onNewSession).toHaveBeenCalledWith("cowork");
 
     // ▾ opens the persona menu: enabled personas appear, the disabled one does not, plus a manage entry.
-    fireEvent.click(screen.getByLabelText("Choose a persona"));
-    const menu = (await screen.findByText("Start a session as")).closest(".newsplit-menu") as HTMLElement;
+    fireEvent.click(screen.getByLabelText("Choose an agent"));
+    const menu = (await screen.findByText("Choose an agent for this task")).closest(".newsplit-menu") as HTMLElement;
     const w = within(menu);
     expect(w.getByText("Ops")).toBeTruthy();
     expect(w.getByText("Code")).toBeTruthy();
     expect(w.queryByText("Disabled One")).toBeNull();
-    expect(w.getByText("Manage personas…")).toBeTruthy();
+    expect(w.getByText("Manage agents…")).toBeTruthy();
 
     // Selecting a persona starts a session as that persona.
     fireEvent.click(w.getByText("Ops"));
     expect(baseProps.onNewSession).toHaveBeenCalledWith("ops");
 
     // "Manage personas…" opens the persona management surface.
-    fireEvent.click(screen.getByLabelText("Choose a persona"));
-    fireEvent.click(await screen.findByText("Manage personas…"));
+    fireEvent.click(screen.getByLabelText("Choose an agent"));
+    fireEvent.click(await screen.findByText("Manage agents…"));
     expect(baseProps.onManagePersonas).toHaveBeenCalled();
   });
 
@@ -259,9 +259,9 @@ describe("New-session split button", () => {
     ]);
     render(<Sidebar {...baseProps} />);
     await screen.findByLabelText("Group and filter conversations");
-    fireEvent.click(screen.getByLabelText("Choose a persona"));
-    const menu = (await screen.findByText("Start a session as")).closest(".newsplit-menu") as HTMLElement;
+    fireEvent.click(screen.getByLabelText("Choose an agent"));
+    const menu = (await screen.findByText("Choose an agent for this task")).closest(".newsplit-menu") as HTMLElement;
     expect(within(menu).getByText("Ops")).toBeTruthy();
-    expect(within(menu).queryByText("Manage personas…")).toBeNull();
+    expect(within(menu).queryByText("Manage agents…")).toBeNull();
   });
 });
