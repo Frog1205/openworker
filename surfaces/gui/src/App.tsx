@@ -1293,8 +1293,8 @@ export function App() {
           className="nav-reveal-btn"
           onClick={toggleNav}
           onMouseEnter={() => setNavPeek(true)}
-          title="Show sidebar (⌘B)"
-          aria-label="Show sidebar"
+          title={`${t("nav.expand")} (⌘B)`}
+          aria-label={t("nav.expand")}
         >
           <Icon name="sidebar" size={16} />
         </button>
@@ -1410,8 +1410,8 @@ export function App() {
                 <button
                   className="topbar-icon-btn"
                   onClick={toggleNav}
-                  aria-label="Show sidebar"
-                  title="Show sidebar (⌘B)"
+                  aria-label={t("nav.expand")}
+                  title={`${t("nav.expand")} (⌘B)`}
                 >
                   <Icon name="sidebar" size={16} />
                 </button>
@@ -1477,8 +1477,8 @@ export function App() {
                 className="topbar-icon-btn"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => setRailHidden((h) => !h)}
-                aria-label={railHidden ? "Show side panel" : "Hide side panel"}
-                title={railHidden ? "Show side panel" : "Hide side panel"}
+                aria-label={railHidden ? (locale === "zh-CN" ? "显示侧边面板" : "Show side panel") : (locale === "zh-CN" ? "隐藏侧边面板" : "Hide side panel")}
+                title={railHidden ? (locale === "zh-CN" ? "显示侧边面板" : "Show side panel") : (locale === "zh-CN" ? "隐藏侧边面板" : "Hide side panel")}
               >
                 <Icon name="sidebarRight" size={16} />
               </button>
@@ -1567,7 +1567,7 @@ export function App() {
                   )}
                   {/* Compaction runs between provider turns (nothing streams during it), so
                       the transient takes over the waiting slot with a specific label. */}
-                  {running && compacting && <WaitingForAgent label="Compacting context…" />}
+                  {running && compacting && <WaitingForAgent label={locale === "zh-CN" ? "正在整理上下文…" : "Compacting context…"} />}
                   {running &&
                     !compacting &&
                     !reasoningStream &&
@@ -1576,7 +1576,7 @@ export function App() {
                   {streaming && streamMode(streaming, items, running) === "answer" && (
                     <div className="transcript">
                       <div className="bubble-assistant">
-                        <div className="who">assistant</div>
+                        <div className="who">{locale === "zh-CN" ? "Atlas" : "assistant"}</div>
                         <Markdown text={streaming} />
                         <span className="stream-cursor">▍</span>
                       </div>
@@ -1738,11 +1738,12 @@ function lastItemIsAssistant(items: Item[]): boolean {
 }
 
 function WaitingForAgent({ label }: { label?: string }) {
+  const { locale } = useI18n();
   return (
     <div className="waiting-transcript">
       <div className="waiting-row" aria-live="polite">
         <span className="waiting-spinner" />
-        <span>{label || "Waiting for agent..."}</span>
+        <span>{label || (locale === "zh-CN" ? "正在等待 Atlas 响应…" : "Waiting for Atlas…")}</span>
       </div>
     </div>
   );

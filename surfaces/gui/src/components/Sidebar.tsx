@@ -998,8 +998,8 @@ export function Sidebar(props: Props) {
         {props.onCollapse && (
           <button
             className="nav-pin-btn w-7 h-7 grid place-items-center rounded-md text-faint hover:text-ink hover:bg-paper shrink-0"
-            title={props.collapsed ? "Dock sidebar (⌘B)" : "Collapse sidebar (⌘B)"}
-            aria-label={props.collapsed ? "Dock sidebar" : "Collapse sidebar"}
+            title={`${props.collapsed ? t("nav.expand") : t("nav.collapse")} (⌘B)`}
+            aria-label={props.collapsed ? t("nav.expand") : t("nav.collapse")}
             onClick={props.onCollapse}
           >
             <Icon name="sidebar" size={16} />
