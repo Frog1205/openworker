@@ -9,6 +9,7 @@ workspace path. Other permission grants remain global-only.
 
 from __future__ import annotations
 
+import os
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -77,7 +78,15 @@ _FIELDS = {
 # These fields change what consequential actions can run without a prompt, so the normal
 # workspace override pass never applies them. `allowed_commands` is added separately only
 # for a canonically trusted workspace; `auto_allow` remains user-global only.
-_GLOBAL_ONLY_FIELDS = {"allowed_commands", "auto_allow"}
+_GLOBAL_ONLY_FIELDS = {
+    "allowed_commands",
+    "auto_allow",
+    "cloud_base_url",
+    "cloud_auth_domain",
+    "cloud_client_id",
+    "cloud_audience",
+    "cloud_relay_ws_url",
+}
 _WORKSPACE_FIELDS = _FIELDS - _GLOBAL_ONLY_FIELDS
 
 
@@ -109,6 +118,19 @@ def load_config(
     workspace_trusted: bool = False,
 ) -> Config:
     cfg = Config()
+    # Atlas builds fail closed for upstream-managed services. A user-owned global
+    # deployment config may opt into Atlas/self-hosted endpoints; workspace config may not.
+    if os.environ.get("ATLAS_PRODUCT"):
+        try:
+            from atlas.core.product import load_product_context
+
+            product = load_product_context()
+            cfg.cloud_base_url = product.cloud_base_url or ""
+            cfg.cloud_relay_ws_url = product.relay_ws_url or ""
+        except (ImportError, ValueError):
+            # Strict startup validation reports the actionable manifest error.
+            cfg.cloud_base_url = ""
+            cfg.cloud_relay_ws_url = ""
 
     g = Path(global_path) if global_path is not None else global_config_path()
     if g.is_file():

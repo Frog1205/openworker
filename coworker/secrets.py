@@ -36,11 +36,18 @@ def state_dir() -> Path:
     base = os.environ.get("COWORKER_STATE_DIR")
     if base:
         return Path(base).expanduser()
+    product = os.environ.get("ATLAS_PRODUCT", "").strip().lower()
+    atlas_dir = (
+        "com.atlas.enterprise"
+        if product in {"enterprise", "atlas-enterprise"}
+        else "com.atlas.creator"
+    )
+    app_dir = atlas_dir if product else "coworker"
     if sys.platform == "win32":
         appdata = os.environ.get("APPDATA")
         if appdata:
-            return Path(appdata) / "coworker"
-    return Path.home() / ".config" / "coworker"
+            return Path(appdata) / app_dir
+    return Path.home() / ".config" / app_dir
 
 
 def _load_dotenv(path: Path) -> dict[str, str]:

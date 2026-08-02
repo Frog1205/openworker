@@ -8,6 +8,8 @@ import secrets
 import sys
 from pathlib import Path
 
+from atlas.core.product import load_product_context
+
 from ..config import load_config
 from ..permissions import Mode
 from ..secrets import state_dir, write_private_text
@@ -99,12 +101,14 @@ def _watch_parent_windows(parent: int) -> None:
     threading.Thread(target=watch, daemon=True).start()
 
 
-def build_app(workspace: str | None, model: str, mode: str):
+def build_app(workspace: str | None, model: str, mode: str, product: str | None = None):
+    product_context = load_product_context(product)
     manager = SessionManager(
         workspace=Path(workspace).expanduser().resolve() if workspace else None,
         data_dir=state_dir(),
         model=model,
         mode=Mode(mode),
+        product_context=product_context,
     )
     return create_app(manager)
 
@@ -149,7 +153,16 @@ def main(argv=None) -> None:
     )
     parser.add_argument("--host", default=cfg.host)
     parser.add_argument("--port", type=int, default=cfg.port)
+    parser.add_argument(
+        "--product",
+        default=os.environ.get("ATLAS_PRODUCT", "creator"),
+        choices=["creator", "enterprise", "atlas-creator", "atlas-enterprise"],
+        help="Atlas product manifest to load",
+    )
     args = parser.parse_args(argv)
+
+    # Make the selected product visible to layered config and child integrations.
+    os.environ["ATLAS_PRODUCT"] = args.product
 
     # Publish the ACTUAL bound port so loopback URLs (the managed-OAuth callback)
     # target this process, not config.port. The desktop shell runs the sidecar on
@@ -161,7 +174,7 @@ def main(argv=None) -> None:
         import uvicorn
 
         _exit_when_orphaned()
-        app = build_app(args.cwd, args.model, args.mode)
+        app = build_app(args.cwd, args.model, args.mode, args.product)
         uvicorn.run(
             app, host=args.host, port=args.port, ws_max_size=_WS_MAX_FRAME_BYTES
         )
