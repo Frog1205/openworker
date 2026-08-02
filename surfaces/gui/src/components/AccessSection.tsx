@@ -49,6 +49,26 @@ const BTN_ACCENT = "text-[12px] px-2.5 py-1.5 rounded-lg bg-accent text-white sh
 const BTN_BORDERED =
   "text-[12px] px-2.5 py-1.5 rounded-lg border border-line bg-paper hover:border-lineStrong shrink-0";
 
+const CONNECTOR_BLURB_ZH: Record<string, string> = {
+  browser: "访问网页、检索信息，并在浏览器中完成操作。",
+  amplitude: "查询 Amplitude 产品数据与图表，分析用户和行为指标。",
+  apollo: "检索并补全企业与联系人信息，支持销售研究。",
+  asana: "检索任务和项目，读取进展并协助推进工作。",
+  attio: "读取 Attio CRM 中的对象、记录和备注。",
+  box: "在 Box 中搜索、浏览和读取文件。",
+  canva: "浏览、创建并导出设计内容。",
+  github: "读取代码仓库、议题、拉取请求和提交记录。",
+  gmail: "搜索、阅读并整理 Gmail 邮件。",
+  google_calendar: "查看日历安排、空闲时段和会议详情。",
+  hubspot: "读取 HubSpot 中的联系人、公司、商机和销售动态。",
+  slack: "搜索 Slack 消息与频道，并在授权后发送内容。",
+};
+
+const connectorLabel = (name: string, byName: ConnectorMap, zh: boolean) =>
+  zh && name === "browser" ? "浏览器" : labelFor(name, byName);
+const connectorBlurb = (c: Connector, zh: boolean) =>
+  zh ? (CONNECTOR_BLURB_ZH[c.name] || "连接此服务，让 Atlas 在授权范围内读取信息并完成任务。") : c.blurb;
+
 export function AccessSection({
   sessionId,
   personaId,
@@ -70,7 +90,8 @@ export function AccessSection({
   openKey?: number;
   onOpenIntegrations?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [open, setOpen] = useState(false);
   const [conns, setConns] = useState<SessionConnections | null>(null);
   const [byName, setByName] = useState<ConnectorMap>({});
@@ -211,17 +232,17 @@ export function AccessSection({
     .sort((a, b) => a.title.localeCompare(b.title));
 
   // The header summary — the §23 glance, permanent: live source names + the folder fact.
-  const names = live.map((c) => labelFor(c.connector, byName));
+  const names = live.map((c) => connectorLabel(c.connector, byName, zh));
   const sourcesPart =
     names.length === 0
-      ? "no sources"
+      ? (zh ? "无可用来源" : "no sources")
       : names.length <= 2
         ? names.join(", ")
         : `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
   const folderPart = projectScoped
     ? baseName(workspace || roots.find((r) => r.primary)?.path || "") || null
     : roots.length > 0
-      ? `${roots.length} folder${roots.length === 1 ? "" : "s"}`
+      ? `${roots.length} ${zh ? "个文件夹" : `folder${roots.length === 1 ? "" : "s"}`}`
       : null;
   const summary = [sourcesPart, folderPart].filter(Boolean).join(" · ");
 
@@ -267,7 +288,7 @@ export function AccessSection({
             />
           ) : channelsFor ? (
             <ChannelsInline
-              label={labelFor(channelsFor, byName)}
+              label={connectorLabel(channelsFor, byName, zh)}
               channels={channelsOf(channelsFor)}
               recent={recent}
               draft={draft}
@@ -284,10 +305,10 @@ export function AccessSection({
             <div className="space-y-4">
               {/* Sources — each toggle is a per-session override (mute for THIS session only). */}
               <div>
-                <div className={`${SEC_H} mb-1.5`}>Sources</div>
+                <div className={`${SEC_H} mb-1.5`}>{zh ? "信息来源" : "Sources"}</div>
                 {connected.length === 0 && (
                   <div className="text-[12px] text-faint py-0.5">
-                    No connectors enabled for this session.
+                    {zh ? "当前任务尚未启用连接器。" : "No connectors enabled for this session."}
                   </div>
                 )}
                 <div className="space-y-1">
@@ -296,8 +317,10 @@ export function AccessSection({
                       <ConnectorBadge connector={visualFor(c.connector, "connector", byName)} size={24} />
                       <div className="min-w-0 flex-1">
                         <div className="text-[12.5px] font-medium leading-tight truncate">
-                          <span>{labelFor(c.connector, byName)}</span>
-                          {c.detail && <span className="text-faint font-normal"> · {c.detail}</span>}
+                          <span>{connectorLabel(c.connector, byName, zh)}</span>
+                          {c.detail && c.detail.toLowerCase() !== labelFor(c.connector, byName).toLowerCase() && (
+                            <span className="text-faint font-normal"> · {c.detail}</span>
+                          )}
                         </div>
                         {byName[c.connector]?.channels && (
                           <button
@@ -307,7 +330,7 @@ export function AccessSection({
                               setChannelsFor(c.connector);
                             }}
                           >
-                            Channels · {channelsOf(c.connector).length}
+                            {zh ? "频道" : "Channels"} · {channelsOf(c.connector).length}
                             <Icon name="chevronRight" size={10} />
                           </button>
                         )}
@@ -315,14 +338,14 @@ export function AccessSection({
                       <Toggle
                         checked={c.enabled}
                         onChange={(next) => toggleSession(c.connector, next)}
-                        title="Enabled for this session — tap to mute here"
+                        title={zh ? "已为当前任务启用；点击可在本任务中停用" : "Enabled for this session — tap to mute here"}
                       />
                     </div>
                   ))}
                 </div>
                 {connected.length > 0 && (
                   <p className="text-[10.5px] text-faint mt-1 leading-snug">
-                    Off mutes it for <b>this session only</b> — the connector stays connected.
+                    {zh ? <>关闭后仅在<b>当前任务</b>中停用，连接器本身仍保持连接。</> : <>Off mutes it for <b>this session only</b> — the connector stays connected.</>}
                   </p>
                 )}
                 {/* §32 addendum (owner ask 2026-07-13; FB-012): the catalog's long tail,
@@ -332,7 +355,7 @@ export function AccessSection({
                   <div className="mt-1.5">
                     <input
                       className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-panel text-[12.5px] outline-none focus:border-accent"
-                      placeholder="Search connectors…"
+                      placeholder={zh ? "搜索连接器…" : "Search connectors…"}
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => {
@@ -348,7 +371,7 @@ export function AccessSection({
                       // Also covers a failed/empty catalog fetch: an open picker must never
                       // be silently blank — point at the Connectors page either way.
                       <div className="text-[11.5px] text-faint mt-1.5 px-0.5">
-                        No match — see all on the Connectors page below.
+                        {zh ? "没有匹配项，可前往下方连接器管理页查看全部服务。" : "No match — see all on the Connectors page below."}
                       </div>
                     )}
                     <div className="mt-1 max-h-64 overflow-y-auto">
@@ -367,9 +390,9 @@ export function AccessSection({
                           <ConnectorBadge connector={visualFor(c.name, "connector", byName)} size={22} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-[12.5px] font-medium leading-tight">
-                              {c.title}
+                              {connectorLabel(c.name, byName, zh)}
                             </span>
-                            <span className="block text-[11px] text-faint truncate">{c.blurb}</span>
+                            <span className="block text-[11px] text-faint truncate">{connectorBlurb(c, zh)}</span>
                           </span>
                           <Icon name="chevronRight" size={11} className="text-faint shrink-0" />
                         </button>
@@ -382,7 +405,7 @@ export function AccessSection({
                     onClick={() => setAdding(true)}
                     data-testid="access-add-source"
                   >
-                    + Add a source…
+                    {zh ? "+ 添加信息来源…" : "+ Add a source…"}
                   </button>
                 )}
                 {/* Lives with its list (tester ask 2026-07-26): each group's manage link sits
@@ -391,24 +414,24 @@ export function AccessSection({
                   className="mt-1.5 block text-[12px] text-accent font-medium hover:underline text-left"
                   onClick={() => onOpenIntegrations?.()}
                 >
-                  Manage all connectors (global) →
+                  {zh ? "管理全部连接器（全局）→" : "Manage all connectors (global) →"}
                 </button>
               </div>
 
               {recommended.length > 0 && (
                 <div>
-                  <div className={`${SEC_H} mb-1.5`}>Recommended</div>
+                  <div className={`${SEC_H} mb-1.5`}>{zh ? "推荐" : "Recommended"}</div>
                   <div className="space-y-1">
                     {recommended.map((r) => (
                       <div className="flex items-center gap-2 py-1" key={r.connector}>
                         <ConnectorBadge connector={visualFor(r.connector, "connector", byName)} size={24} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 text-[12.5px] font-medium leading-tight">
-                            <span className="truncate">{labelFor(r.connector, byName)}</span>
-                            {r.tier === "core" && <span className={TAG_CORE}>core</span>}
+                            <span className="truncate">{connectorLabel(r.connector, byName, zh)}</span>
+                            {r.tier === "core" && <span className={TAG_CORE}>{zh ? "核心" : "core"}</span>}
                           </div>
-                          <div className="text-[11px] text-faint truncate" title={r.reason}>
-                            {r.reason}
+                          <div className="text-[11px] text-faint truncate" title={zh ? (CONNECTOR_BLURB_ZH[r.connector] || r.reason) : r.reason}>
+                            {zh ? (CONNECTOR_BLURB_ZH[r.connector] || "帮助 Atlas 获取完成当前任务所需的信息。") : r.reason}
                           </div>
                         </div>
                         <button
@@ -421,7 +444,7 @@ export function AccessSection({
                             else onOpenIntegrations?.();
                           }}
                         >
-                          Connect
+                          {zh ? "连接" : "Connect"}
                         </button>
                       </div>
                     ))}
@@ -433,7 +456,7 @@ export function AccessSection({
                   a quiet "+" link, structurally identical to Sources (owner ask 2026-07-13:
                   the old drawer's card wrapper read too heavy in the rail). */}
               <div data-testid="drawer-directories">
-                <div className={`${SEC_H} mb-1.5`}>Folders</div>
+                <div className={`${SEC_H} mb-1.5`}>{zh ? "文件夹" : "Folders"}</div>
                 <div className="-mx-1.5">
                   {roots.map((r) => (
                     <RootRow
@@ -461,7 +484,7 @@ export function AccessSection({
                     className="mt-1 text-[12px] text-accent hover:underline text-left"
                     onClick={() => setAddingFolder(true)}
                   >
-                    + Give access to a folder…
+                    {zh ? "+ 授权访问文件夹…" : "+ Give access to a folder…"}
                   </button>
                 )}
                 {rootsError && <div className="roots-err">{rootsError}</div>}

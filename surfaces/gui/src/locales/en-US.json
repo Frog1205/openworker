@@ -257,5 +257,15 @@
   "provider.hoursAgo": "{count}h ago",
   "provider.daysAgo": "{count}d ago",
   "models.addAnother": "Add another model…",
-  "models.family": "Model family"
+  "models.family": "Model family",
+  "composer.inboxApprovals": "Send approvals to Inbox",
+  "composer.inboxApprovalsHint": "Approvals and questions go to Inbox so Atlas can keep working.",
+  "composer.inboxApprovalsTitle": "Send approvals to Inbox",
+  "sidebar.groupBy": "Group by",
+  "sidebar.groupPersona": "Persona",
+  "sidebar.groupChronological": "Chronological",
+  "sidebar.filterCoworker": "Filter by agent",
+  "sidebar.clearFilter": "Clear",
+  "sidebar.noFilter": "None selected shows all.",
+  "sidebar.groupFilterTitle": "Group and filter tasks"
 }

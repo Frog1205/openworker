@@ -257,5 +257,15 @@
   "provider.hoursAgo": "{count} 小时前",
   "provider.daysAgo": "{count} 天前",
   "models.addAnother": "添加其他模型…",
-  "models.family": "模型系列"
+  "models.family": "模型系列",
+  "composer.inboxApprovals": "将确认请求发送到收件箱",
+  "composer.inboxApprovalsHint": "确认事项和待答问题会进入收件箱，Atlas 可继续处理其他步骤。",
+  "composer.inboxApprovalsTitle": "将确认请求发送到收件箱",
+  "sidebar.groupBy": "任务分组",
+  "sidebar.groupPersona": "按智能体角色",
+  "sidebar.groupChronological": "按时间排序",
+  "sidebar.filterCoworker": "筛选智能体",
+  "sidebar.clearFilter": "清除",
+  "sidebar.noFilter": "未选择时显示全部任务。",
+  "sidebar.groupFilterTitle": "任务分组与筛选"
 }

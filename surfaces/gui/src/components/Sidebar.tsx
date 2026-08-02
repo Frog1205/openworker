@@ -714,8 +714,8 @@ export function Sidebar(props: Props) {
       </span>
       <button
         className="w-6 h-6 grid place-items-center rounded-md text-faint hover:text-ink hover:bg-paper -mr-1"
-        title="Group & filter conversations"
-        aria-label="Group and filter conversations"
+        title={t("sidebar.groupFilterTitle")}
+        aria-label={t("sidebar.groupFilterTitle")}
         onClick={() => setGroupMenuOpen((v) => !v)}
       >
         <Icon name="sliders" size={14} />
@@ -729,9 +729,9 @@ export function Sidebar(props: Props) {
             data-testid="group-filter-menu"
           >
             <div className="px-2 pt-1 pb-1 text-[10.5px] uppercase tracking-[0.06em] text-faint font-semibold">
-              Group by
+              {t("sidebar.groupBy")}
             </div>
-            {([["grouped", "Persona"], ["flat", "Chronological"]] as ["flat" | "grouped", string][]).map(
+            {([["grouped", t("sidebar.groupPersona")], ["flat", t("sidebar.groupChronological")]] as ["flat" | "grouped", string][]).map(
               ([key, label]) => (
                 <button
                   key={key}
@@ -748,11 +748,11 @@ export function Sidebar(props: Props) {
                 <div className="my-1 border-t border-line" />
                 <div className="px-2 pt-1 pb-1 flex items-center justify-between">
                   <span className="text-[10.5px] uppercase tracking-[0.06em] text-faint font-semibold">
-                    Filter by coworker
+                    {t("sidebar.filterCoworker")}
                   </span>
                   {filterPersonas.size > 0 && (
                     <button className="text-[11px] text-accent" onClick={() => setFilterPersonas(new Set())}>
-                      Clear
+                      {t("sidebar.clearFilter")}
                     </button>
                   )}
                 </div>
@@ -779,7 +779,7 @@ export function Sidebar(props: Props) {
                   })}
                 </div>
                 <div className="px-2 pt-1 pb-0.5 text-[11px] text-faint leading-snug">
-                  None checked shows all.
+                  {t("sidebar.noFilter")}
                 </div>
               </>
             )}

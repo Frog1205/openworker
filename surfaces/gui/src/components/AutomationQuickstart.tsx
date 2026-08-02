@@ -13,6 +13,7 @@ import {
 import { ConnectorBadge } from "../connectors/ConnectorIcon";
 import { ChannelPicker } from "./SubscriptionsChip";
 import { SelectMenu } from "./SelectMenu";
+import { useI18n } from "../I18nProvider";
 
 // The Automations quickstart (UX-DECISIONS §29): ONE template system. The former onboarding
 // recipe step (§24's role recipes) merged into the page's "Start from a template" grid — every
@@ -32,6 +33,13 @@ const DAYS: Record<string, { label: string; dow: string }> = {
   sun: { label: "Sundays", dow: "0" },
   weekdays: { label: "Weekdays", dow: "1-5" },
   daily: { label: "Every day", dow: "*" },
+};
+const DAYS_ZH: Record<string, { label: string; dow: string }> = {
+  mon: { label: "每周一", dow: "1" }, tue: { label: "每周二", dow: "2" },
+  wed: { label: "每周三", dow: "3" }, thu: { label: "每周四", dow: "4" },
+  fri: { label: "每周五", dow: "5" }, sat: { label: "每周六", dow: "6" },
+  sun: { label: "每周日", dow: "0" }, weekdays: { label: "工作日", dow: "1-5" },
+  daily: { label: "每天", dow: "*" },
 };
 // §30 connect-state spinner (the app has no other spinner — waits elsewhere are label swaps).
 // Exported for Onboarding page 2's sign-in button (same states, same look).
@@ -148,6 +156,40 @@ const TEMPLATES: QuickTemplate[] = [
   },
 ];
 
+const TEMPLATES_ZH: QuickTemplate[] = [
+  {
+    key: "github", title: "GitHub 项目周报", blurb: "汇总已合并的 PR 和重要提交，并发布到团队 Slack。", cadence: "每周",
+    conns: [{ name: "slack", why: "接收周报的团队频道" }, { name: "github", why: "获取代码仓库动态" }],
+    needsRepo: true, needsChannel: true, consent: true, day: "mon", time: "09:00",
+    instructions: ({ repo, channel }) => `汇总 GitHub 仓库 ${repo || "（已连接的仓库）"} 自上次周报以来的动态：已合并的 PR、重要提交和需要关注的事项。使用 send_message 将精炼周报发送到 Slack 频道 ${channel}。`,
+  },
+  {
+    key: "pipeline", title: "销售管道简报", blurb: "追踪阶段变化与停滞商机，并将重点同步到 Slack。", cadence: "每周",
+    conns: [{ name: "slack", why: "接收简报的团队频道" }, { name: "hubspot", why: "获取商机阶段与跟进动态" }],
+    needsChannel: true, consent: true, day: "mon", time: "09:00",
+    instructions: ({ channel }) => `检查 HubSpot 自上次简报以来的动态：阶段发生变化、长期无进展以及超过预计成交日期的商机。使用 send_message 将精炼的销售管道简报发送到 Slack 频道 ${channel}。`,
+  },
+  {
+    key: "brief", title: "每日工作简报", blurb: "在工作开始前整合今日日程与未读邮件，形成行动提示。", cadence: "每天",
+    conns: [{ name: "google_calendar", why: "获取今日会议与可用时段" }, { name: "gmail", why: "梳理昨晚以来的新邮件" }],
+    deliver: true, day: "daily", time: "08:00",
+    instructions: ({ deliver }) => `生成一份精炼的每日工作简报：整理今天的日程、空闲时段，以及昨晚以来需要关注的邮件。${deliver === "app" ? "将结果保存为当前任务交付物。" : "通过 Slack 私信发送给我。"}`,
+  },
+  {
+    key: "news", title: "每日资讯速览", blurb: "精选 5 条科技与全球要闻，保存为 Markdown 简报。", cadence: "每天", conns: [], day: "daily", time: "08:00",
+    instructions: () => "检索过去 24 小时最重要的科技与全球新闻，筛选并写成 5 条简洁、有信息增量的要点，保存为 Markdown 文件。",
+  },
+  {
+    key: "inboxdigest", title: "收件箱摘要", blurb: "将未读邮件压缩为一份简洁、可行动的摘要。", cadence: "工作日",
+    conns: [{ name: "gmail", why: "读取需要处理的未读邮件" }], day: "weekdays", time: "09:00",
+    instructions: () => "梳理我的未读邮件，按重要程度提炼为一份简短摘要，并明确需要回复或跟进的事项。",
+  },
+  {
+    key: "cleanup", title: "下载目录整理", blurb: "按文件类型自动归类近期下载内容，让目录保持清晰。", cadence: "每周", conns: [], day: "fri", time: "17:30",
+    instructions: () => "检查近期下载的文件，按文件类型整理到清晰的子目录中；遇到可能覆盖或删除文件的操作时先征求确认。",
+  },
+];
+
 export function AutomationQuickstart({
   busy,
   onCreate,
@@ -160,8 +202,12 @@ export function AutomationQuickstart({
     permissions?: { tool: string; target: string; access: "read" | "write" }[];
   }) => void;
 }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
+  const templates = zh ? TEMPLATES_ZH : TEMPLATES;
+  const days = zh ? DAYS_ZH : DAYS;
   const [pickedKey, setPickedKey] = useState<string | null>(null);
-  const picked = TEMPLATES.find((t) => t.key === pickedKey) || null;
+  const picked = templates.find((t) => t.key === pickedKey) || null;
 
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [cloud, setCloud] = useState<CloudStatus | null>(null);
@@ -291,12 +337,12 @@ export function AutomationQuickstart({
   };
 
   const gateHint = !allConnected
-    ? `Connect ${picked?.conns
+    ? `${zh ? "请先连接" : "Connect"} ${picked?.conns
         .filter((c) => !connState(c.name)?.connected)
         .map((c) => connState(c.name)?.title || c.name)
-        .join(" and ")} to continue`
+        .join(zh ? "、" : " and ")}${zh ? " 后继续" : " to continue"}`
     : picked?.needsChannel && !channel
-      ? "Pick a channel to post to first"
+      ? (zh ? "请先选择接收内容的频道" : "Pick a channel to post to first")
       : "";
 
   const label = "block text-[12px] text-muted mt-3 mb-1";
@@ -306,12 +352,12 @@ export function AutomationQuickstart({
   return (
     <div className="mb-4">
       <div className="text-[11px] uppercase tracking-[0.05em] text-faint mb-2.5">
-        Start from a template
+        {zh ? "从模板开始" : "Start from a template"}
       </div>
       {/* Equal-height cards (owner ask 2026-07-12): 1fr rows + h-full — <button> grid items
           don't stretch like divs. */}
       <div className="grid grid-cols-3 auto-rows-fr gap-3">
-        {TEMPLATES.map((t) => (
+        {templates.map((t) => (
           <button
             key={t.key}
             data-testid={`qs-template-${t.key}`}
@@ -332,7 +378,7 @@ export function AutomationQuickstart({
                 return (
                   <span
                     key={c.name}
-                    title={`${cs?.title || c.name} — ${on ? "connected" : "not connected yet"}`}
+                    title={`${cs?.title || c.name} — ${on ? (zh ? "已连接" : "connected") : (zh ? "尚未连接" : "not connected yet")}`}
                     style={on ? undefined : { filter: "grayscale(1)", opacity: 0.55 }}
                   >
                     {cs ? (
@@ -344,7 +390,7 @@ export function AutomationQuickstart({
                 );
               })}
               <span className="text-[11px] text-faint ml-0.5">
-                {t.conns.length === 0 ? `No connections needed · ${t.cadence}` : t.cadence}
+                {t.conns.length === 0 ? `${zh ? "无需连接外部服务" : "No connections needed"} · ${t.cadence}` : t.cadence}
               </span>
             </span>
           </button>
@@ -360,11 +406,11 @@ export function AutomationQuickstart({
           {/* §30: the card names its template — without this it starts abruptly after the grid. */}
           <div className="flex items-baseline gap-2 pb-2.5 mb-1 border-b border-line">
             <span className="text-[11px] uppercase tracking-[0.05em] text-accent font-semibold">
-              Set up
+              {zh ? "配置" : "Set up"}
             </span>
             <span className="text-[14px] font-semibold">{picked.title}</span>
             <span className="ml-auto text-[12px] text-faint max-sm:hidden">
-              {picked.conns.length ? "Connections, delivery & schedule" : "Delivery & schedule"} ·{" "}
+              {picked.conns.length ? (zh ? "连接、交付与计划" : "Connections, delivery & schedule") : (zh ? "交付与计划" : "Delivery & schedule")} ·{" "}
               {picked.cadence}
             </span>
           </div>
@@ -380,13 +426,13 @@ export function AutomationQuickstart({
                     <span className="block text-[11.5px] text-faint">{why}</span>
                   </span>
                   {c?.connected ? (
-                    <span className="text-[12.5px] text-ok">✓ Connected</span>
+                    <span className="text-[12.5px] text-ok">✓ {zh ? "已连接" : "Connected"}</span>
                   ) : flow ? (
                     <span className="inline-flex items-center gap-2 text-[12px] text-muted">
                       <Spinner />
                       {flow.phase === "opening"
-                        ? "Opening browser…"
-                        : `Waiting for ${c?.title || name}…`}
+                        ? (zh ? "正在打开浏览器…" : "Opening browser…")
+                        : `${zh ? "正在等待" : "Waiting for"} ${c?.title || name}…`}
                     </span>
                   ) : (
                     <button
@@ -394,7 +440,7 @@ export function AutomationQuickstart({
                       onClick={() => startConnect(name)}
                       data-testid={`ob-connect-${name}`}
                     >
-                      Connect
+                      {zh ? "连接" : "Connect"}
                     </button>
                   )}
                 </div>
@@ -408,16 +454,16 @@ export function AutomationQuickstart({
                     <span>↗</span>
                     <span className="flex-1 min-w-0">
                       <b className="text-ink font-medium">
-                        Finish connecting {c?.title || name} in your browser.
+                        {zh ? `请在浏览器中完成 ${c?.title || name} 的连接。` : `Finish connecting ${c?.title || name} in your browser.`}
                       </b>{" "}
-                      Approve it there, then come back — this page updates by itself.
+                      {zh ? "授权完成后返回此处，页面会自动更新。" : "Approve it there, then come back — this page updates by itself."}
                     </span>
                     <button
                       className="text-faint underline hover:text-muted shrink-0"
                       onClick={() => setConnFlow(null)}
                       data-testid="ob-connect-cancel"
                     >
-                      Cancel
+                      {zh ? "取消" : "Cancel"}
                     </button>
                   </div>
                 )}
@@ -431,25 +477,25 @@ export function AutomationQuickstart({
               data-testid="ob-cloudpane"
             >
               <span className="block text-[13px] text-ink font-medium">
-                One sign-in unlocks every one-click connection
+                {zh ? "登录一次，即可使用所有快捷连接" : "One sign-in unlocks every one-click connection"}
               </span>
-              Connections are brokered by OpenWorker Cloud — your tokens stay on this computer.
+              {zh ? "连接由 Atlas Worker Cloud 协调，访问令牌仍安全保存在本机。" : "Connections are brokered by Atlas Worker Cloud — your tokens stay on this computer."}
               <div className="flex items-center gap-3 mt-2">
                 {signinPhase ? (
                   <>
                     <span className="inline-flex items-center gap-2 text-[12px]">
                       <Spinner />
-                      {signinPhase === "opening" ? "Opening browser…" : "Waiting for sign-in…"}
+                      {signinPhase === "opening" ? (zh ? "正在打开浏览器…" : "Opening browser…") : (zh ? "正在等待登录…" : "Waiting for sign-in…")}
                     </span>
                     {signinPhase === "waiting" && (
                       <span className="text-[11.5px] text-faint">
-                        Finish signing in in your browser — this page updates by itself.{" "}
+                        {zh ? "请在浏览器中完成登录，页面会自动更新。" : "Finish signing in in your browser — this page updates by itself."}{" "}
                         <button
                           className="underline hover:text-muted"
                           onClick={cancelSignin}
                           data-testid="ob-signin-cancel"
                         >
-                          Cancel
+                          {zh ? "取消" : "Cancel"}
                         </button>
                       </span>
                     )}
@@ -460,7 +506,7 @@ export function AutomationQuickstart({
                     onClick={signInThenConnect}
                     data-testid="ob-cloud-signin"
                   >
-                    Sign in to OpenWorker Cloud
+                    {zh ? "登录 Atlas Worker Cloud" : "Sign in to Atlas Worker Cloud"}
                   </button>
                 )}
               </div>
@@ -471,7 +517,7 @@ export function AutomationQuickstart({
             <div className={picked.conns.length ? "bg-paper rounded-xl px-4 py-3.5 mt-3" : ""} data-testid="ob-recipe">
               {picked.needsRepo && (
                 <>
-                  <label className={label}>Repository</label>
+                  <label className={label}>{zh ? "代码仓库" : "Repository"}</label>
                   <input
                     className={input}
                     placeholder="owner/repo"
@@ -483,7 +529,7 @@ export function AutomationQuickstart({
               )}
               {picked.needsChannel && (
                 <>
-                  <label className={label}>Post to channel</label>
+                  <label className={label}>{zh ? "发送到频道" : "Post to channel"}</label>
                   <div data-testid="ob-channel">
                     <ChannelPicker
                       value={channel}
@@ -495,37 +541,37 @@ export function AutomationQuickstart({
                     />
                   </div>
                   <p className="text-[11px] text-warnInk mt-1">
-                    The bot must be a member of the channel — invite @OpenWorker in Slack if it isn't.
+                    {zh ? "Atlas 必须已加入该频道；若尚未加入，请在 Slack 中邀请 @AtlasWorker。" : "The bot must be a member of the channel — invite @AtlasWorker in Slack if it isn't."}
                   </p>
                 </>
               )}
-              <label className={label}>When</label>
+              <label className={label}>{zh ? "执行计划" : "When"}</label>
               <div className="flex gap-2">
                 <div className="flex-1 min-w-0">
                   <SelectMenu
-                    ariaLabel="Day"
+                    ariaLabel={zh ? "日期" : "Day"}
                     value={day}
-                    options={Object.entries(DAYS).map(([k, v]) => ({ value: k, label: v.label }))}
+                    options={Object.entries(days).map(([k, v]) => ({ value: k, label: v.label }))}
                     onChange={setDay}
                   />
                 </div>
                 <input
                   className="w-28 px-3 py-2 rounded-lg border border-line bg-panel text-[13.5px] outline-none focus:border-accent"
                   type="time"
-                  aria-label="Time"
+                  aria-label={zh ? "时间" : "Time"}
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                 />
               </div>
               {picked.deliver && (
                 <>
-                  <label className={label}>Deliver to</label>
+                  <label className={label}>{zh ? "交付到" : "Deliver to"}</label>
                   <SelectMenu
-                    ariaLabel="Deliver to"
+                    ariaLabel={zh ? "交付到" : "Deliver to"}
                     value={deliver}
                     options={[
-                      { value: "app", label: "In the app" },
-                      { value: "slack", label: "Slack DM (connect Slack later)" },
+                      { value: "app", label: zh ? "当前应用" : "In the app" },
+                      { value: "slack", label: zh ? "Slack 私信（稍后连接 Slack）" : "Slack DM (connect Slack later)" },
                     ]}
                     onChange={(v) => setDeliver(v as "app" | "slack")}
                   />
@@ -541,18 +587,17 @@ export function AutomationQuickstart({
                     data-testid="ob-consent"
                   />
                   <span>
-                    Allow this automation to post its digest to{" "}
+                    {zh ? "允许此自动化无需逐次确认，直接将简报发布到" : "Allow this automation to post its digest to"}{" "}
                     <b className="text-ink" title={channel || undefined}>
-                      {channelLabel || "the channel"}
+                      {channelLabel || (zh ? "所选频道" : "the channel")}
                       {channelWorkspace ? ` (${channelWorkspace})` : ""}
                     </b>{" "}
-                    without asking each time. Anything else still asks first.
+                    {zh ? "。其他操作仍会先征求你的确认。" : "without asking each time. Anything else still asks first."}
                   </span>
                 </label>
               ) : picked.conns.length > 0 ? (
                 <p className="text-[12.5px] text-muted mt-3">
-                  This automation only <b className="text-ink">reads</b> on schedule — reading
-                  never needs approval.
+                  {zh ? <>此自动化按计划仅执行<b className="text-ink">读取</b>操作，无需额外确认。</> : <>This automation only <b className="text-ink">reads</b> on schedule — reading never needs approval.</>}
                 </p>
               ) : null}
             </div>
@@ -563,7 +608,7 @@ export function AutomationQuickstart({
               className="text-[12.5px] text-faint hover:text-muted"
               onClick={() => setPickedKey(null)}
             >
-              Cancel
+              {zh ? "取消" : "Cancel"}
             </button>
             {/* A silently-disabled primary reads as a bug — always name the missing piece. */}
             {gateHint && (
@@ -580,7 +625,7 @@ export function AutomationQuickstart({
               onClick={create}
               data-testid="ob-create"
             >
-              {busy ? "Creating…" : "Create automation"}
+              {busy ? (zh ? "正在创建…" : "Creating…") : (zh ? "创建自动化" : "Create automation")}
             </button>
           </div>
         </div>
