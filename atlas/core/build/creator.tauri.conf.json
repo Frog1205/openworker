@@ -1,0 +1,13 @@
+{
+  "productName": "Atlas Creator",
+  "identifier": "com.atlas.creator",
+  "bundle": {
+    "publisher": "Atlas"
+  },
+  "plugins": {
+    "updater": {
+      "active": false,
+      "endpoints": []
+    }
+  }
+}

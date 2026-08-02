@@ -37,6 +37,8 @@ const SESSIONS: SessionInfo[] = [
 ];
 
 const baseProps = {
+  productName: "Atlas Creator",
+  productLocale: "zh-CN",
   agent: "cowork",
   workspace: "",
   surfaces: { cowork: true, chat: false, code: false },

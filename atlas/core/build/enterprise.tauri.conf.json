@@ -1,0 +1,13 @@
+{
+  "productName": "Atlas Enterprise",
+  "identifier": "com.atlas.enterprise",
+  "bundle": {
+    "publisher": "Atlas"
+  },
+  "plugins": {
+    "updater": {
+      "active": false,
+      "endpoints": []
+    }
+  }
+}

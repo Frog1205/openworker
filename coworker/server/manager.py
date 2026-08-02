@@ -18,6 +18,8 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from atlas.core.product import ProductRuntimeContext, load_product_context
+
 from ..agent import build_engine
 from ..agents import get_agent
 from ..connections import (
@@ -119,6 +121,7 @@ class SessionManager:
         model: str = "gpt-5.6-sol",
         mode: Mode = Mode.INTERACTIVE,
         provider: Optional[ProviderClient] = None,
+        product_context: Optional[ProductRuntimeContext] = None,
     ) -> None:
         self.default_workspace = (
             str(Path(workspace).expanduser().resolve()) if workspace else None
@@ -126,6 +129,7 @@ class SessionManager:
         self.model = model
         self.mode = mode
         self.provider = provider
+        self.product_context = product_context or load_product_context()
 
         if data_dir is not None:
             base = Path(data_dir).expanduser()

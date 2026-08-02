@@ -180,7 +180,11 @@ def create_app(manager: SessionManager) -> FastAPI:
         yield
         await manager.aclose()  # stop gateway + close MCP connections on shutdown
 
-    app = FastAPI(title="coworker", version="0.0.0", lifespan=lifespan)
+    app = FastAPI(
+        title=f"{manager.product_context.name} Runtime",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
     api_token = os.environ.get("COWORKER_API_TOKEN", "")
     tokenless_paths = {
         "/v1/health",
@@ -241,7 +245,13 @@ def create_app(manager: SessionManager) -> FastAPI:
             "status": "ok",
             "default_workspace": manager.default_workspace,
             "model": manager.model,
+            "product_id": manager.product_context.product_id,
         }
+
+    @app.get("/v1/product")
+    def product() -> dict[str, Any]:
+        """Authoritative, non-secret product identity and feature contract for surfaces."""
+        return manager.product_context.to_dict()
 
     @app.get("/v1/agents")
     def agents() -> dict[str, Any]:

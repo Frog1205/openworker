@@ -1,0 +1,29 @@
+schema_version: 1
+id: atlas-creator
+name: Atlas Creator
+product_type: creator
+application_identifier: com.atlas.creator
+data_directory: com.atlas.creator
+theme: creator
+default_locale: zh-CN
+supported_locales: [zh-CN, en-US]
+policy_profile: creator-safe
+agent_bundles: [creator-foundation, creator-product, creator-coding]
+skill_bundles: [creator-core, creator-roadshow]
+connectors: [local-files, browser, github]
+features:
+  organization: false
+  project_lifecycle: true
+  mentor_dashboard: true
+  shell_access: false
+branding:
+  display_name_zh: Atlas AI 创造工作台
+  tagline_zh: 从问题发现到项目发布的 AI 创造工作台
+  tagline_en: An AI creation workspace from problem discovery to launch
+external_services:
+  cloud_base_url: null
+  relay_ws_url: null
+  oauth_mode: manual
+  telemetry_enabled: false
+  updater_endpoints: []
+

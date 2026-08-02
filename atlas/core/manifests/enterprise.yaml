@@ -1,0 +1,29 @@
+schema_version: 1
+id: atlas-enterprise
+name: Atlas Enterprise
+product_type: enterprise
+application_identifier: com.atlas.enterprise
+data_directory: com.atlas.enterprise
+theme: enterprise
+default_locale: zh-CN
+supported_locales: [zh-CN, en-US]
+policy_profile: enterprise-managed
+agent_bundles: [office, marketing, sales]
+skill_bundles: [office-core, marketing-core]
+connectors: [local-files, browser, github]
+features:
+  organization: true
+  project_lifecycle: false
+  mentor_dashboard: false
+  shell_access: false
+branding:
+  display_name_zh: Atlas 企业 AI 员工平台
+  tagline_zh: 面向团队的企业 AI 员工底座与交付平台
+  tagline_en: Governed AI agents and delivery infrastructure for teams
+external_services:
+  cloud_base_url: null
+  relay_ws_url: null
+  oauth_mode: manual
+  telemetry_enabled: false
+  updater_endpoints: []
+

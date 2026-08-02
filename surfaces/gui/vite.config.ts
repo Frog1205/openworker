@@ -12,11 +12,17 @@ import path from "node:path";
 export default defineConfig(({ command }) => {
   let devToken = "";
   if (command === "serve") {
+    const product = (process.env.ATLAS_PRODUCT || "").toLowerCase();
+    const appDir = product.includes("enterprise")
+      ? "com.atlas.enterprise"
+      : product
+        ? "com.atlas.creator"
+        : "coworker";
     const state =
       process.env.COWORKER_STATE_DIR ||
       (process.platform === "win32"
-        ? path.join(process.env.APPDATA || os.homedir(), "coworker")
-        : path.join(os.homedir(), ".config", "coworker"));
+        ? path.join(process.env.APPDATA || os.homedir(), appDir)
+        : path.join(os.homedir(), ".config", appDir));
     try {
       devToken = fs.readFileSync(path.join(state, "sidecar-8765.token"), "utf8").trim();
     } catch {
