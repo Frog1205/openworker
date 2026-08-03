@@ -738,6 +738,17 @@ export interface ModelSettings {
   compaction_threshold_pct?: number; // default 0.8, 0.10–0.95
   compaction_cap_tokens?: number; // default 250000
   compaction_model?: string;
+  custom_models?: Array<{ slug: string; name: string; model: string; protocol: "openai" | "claude"; base_url: string }>;
+}
+
+export async function addCustomModel(input: { name: string; model: string; protocol: "openai" | "claude"; base_url: string; api_key: string }): Promise<ModelSettings & { ok: boolean; error?: string }> {
+  const res = await fetch(`${httpBase()}/v1/settings/custom-models`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  return res.json();
+}
+
+export async function removeCustomModel(slug: string): Promise<ModelSettings & { ok: boolean; error?: string }> {
+  const res = await fetch(`${httpBase()}/v1/settings/custom-models/${encodeURIComponent(slug)}`, { method: "DELETE" });
+  return res.json();
 }
 
 export interface PdfSettings {

@@ -49,6 +49,8 @@ class ProviderRouter(ProviderClient):
         """The provider for a model: the `prefix` of `prefix:rest` if it's a known provider,
         else the default. (A colon that isn't a known provider — unlikely — falls through.)
         """
+        if model.startswith("custom:"):
+            return "custom"
         if ":" in model:
             prefix = model.split(":", 1)[0]
             if get_descriptor(prefix) is not None:
@@ -57,6 +59,31 @@ class ProviderRouter(ProviderClient):
 
     def _client_for(self, model: str) -> ProviderClient:
         name = self._provider_name(model)
+        if name == "custom":
+            slug = model.split(":", 1)[1].strip()
+            with self._lock:
+                client = self._clients.get(model)
+                if client is None:
+                    profile = (self._secrets.get(f"custom-model:{slug}") or {}) if self._secrets is not None else {}
+                    protocol = str(profile.get("protocol") or "openai").lower()
+                    api_key = str(profile.get("api_key") or "")
+                    base_url = str(profile.get("base_url") or "").strip().rstrip("/")
+                    if protocol == "claude":
+                        from .anthropic_provider import AnthropicProvider
+                        if base_url.endswith("/messages"):
+                            base_url = base_url[: -len("/messages")]
+                        if not base_url.endswith("/v1"):
+                            base_url += "/v1"
+                        client = AnthropicProvider(api_key=api_key, base_url=base_url or None)
+                    else:
+                        from .openai_provider import OpenAIProvider
+                        if base_url.endswith("/chat/completions"):
+                            base_url = base_url[: -len("/chat/completions")]
+                        if not base_url.endswith("/v1"):
+                            base_url += "/v1"
+                        client = OpenAIProvider(api_key=api_key, base_url=base_url or None)
+                    self._clients[model] = client
+                return client
         with self._lock:
             client = self._clients.get(name)
             if client is None:
@@ -67,12 +94,15 @@ class ProviderRouter(ProviderClient):
                 self._clients[name] = client
             return client
 
-    @staticmethod
-    def _bare(model: str) -> str:
+    def _bare(self, model: str) -> str:
         """Strip a KNOWN provider prefix; the underlying SDK wants the bare model name. A model
         whose first segment isn't a provider (e.g. `qwen2.5-coder:32b` — a version tag, not a
         prefix) is returned unchanged, so the colon isn't mistaken for a provider separator.
         """
+        if model.startswith("custom:"):
+            slug = model.split(":", 1)[1].strip()
+            profile = (self._secrets.get(f"custom-model:{slug}") or {}) if self._secrets is not None else {}
+            return str(profile.get("model") or slug)
         if ":" in model:
             prefix, rest = model.split(":", 1)
             if get_descriptor(prefix) is not None:

@@ -1424,6 +1424,15 @@ def create_app(manager: SessionManager) -> FastAPI:
     def settings_models_remove(body: dict) -> dict[str, Any]:
         return manager.remove_model((body or {}).get("model", ""))
 
+    @app.post("/v1/settings/custom-models")
+    def settings_custom_model_add(body: dict) -> dict[str, Any]:
+        b = body or {}
+        return manager.add_custom_model(b.get("name", ""), b.get("model", ""), b.get("protocol", "openai"), b.get("base_url", ""), b.get("api_key", ""))
+
+    @app.delete("/v1/settings/custom-models/{slug}")
+    def settings_custom_model_remove(slug: str) -> dict[str, Any]:
+        return manager.remove_custom_model(slug)
+
     @app.post("/v1/settings/onboarded")
     def settings_set_onboarded(body: dict) -> dict[str, Any]:
         return manager.set_onboarded(bool((body or {}).get("value", True)))
