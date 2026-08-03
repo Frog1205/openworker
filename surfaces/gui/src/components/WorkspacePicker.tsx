@@ -19,6 +19,7 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
   const [recents, setRecents] = useState<RecentWorkspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [path, setPath] = useState("");
+  const [projectName, setProjectName] = useState("");
   const [error, setError] = useState("");
   const [browsing, setBrowsing] = useState(false);
   const [position, setPosition] = useState({ left: 8, top: 8 });
@@ -71,7 +72,7 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
     <>
       <div className="fixed inset-0 z-[100]" onClick={onClose} aria-hidden="true" />
       <div
-        className="fixed z-[101] w-[310px] max-w-[calc(100vw-1.5rem)] -translate-y-full rounded-2xl border border-line bg-panel shadow-2xl p-2"
+        className={`fixed z-[101] ${creating ? "w-[620px]" : "w-[310px]"} max-w-[calc(100vw-1.5rem)] -translate-y-full rounded-2xl border border-line bg-panel shadow-2xl p-2`}
         style={{ left: position.left, top: position.top }}
         role="menu"
         aria-label={zh ? "选择项目空间" : "Choose project workspace"}
@@ -134,19 +135,25 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
               </button>
           </>
         ) : (
-          <div className="p-1">
-            <div className="flex items-center gap-2 px-1 pb-2">
-              <button type="button" className="text-muted hover:text-ink" onClick={() => setCreating(false)} aria-label={zh ? "返回项目列表" : "Back to projects"}>
-                ‹
-              </button>
-              <span className="font-medium text-[13px]">{zh ? "新建项目" : "New project"}</span>
+          <div className="p-3">
+            <div className="flex items-center justify-between px-1 pb-3">
+              <div className="flex items-center gap-2">
+                <button type="button" className="text-muted hover:text-ink" onClick={() => setCreating(false)} aria-label={zh ? "返回项目列表" : "Back to projects"}>‹</button>
+                <span className="text-[18px] font-semibold">{zh ? "创建项目" : "Create project"}</span>
+              </div>
+              <button type="button" className="text-[20px] text-muted hover:text-ink" onClick={onClose} aria-label={zh ? "关闭" : "Close"}>×</button>
             </div>
-            <p className="px-1 pb-2 text-[12px] text-muted">
-              {zh ? "选择一个新文件夹作为项目空间。" : "Choose a new folder for this project."}
-            </p>
+            <div className="mb-4 flex items-center rounded-xl border border-line bg-panel">
+              <Icon name="folder" size={17} className="mx-3 text-muted" />
+              <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder={zh ? "项目名称" : "Project name"} className="min-w-0 flex-1 border-l border-line bg-transparent px-3 py-3 text-[14px] outline-none" />
+            </div>
+            <div className="mb-2 text-[14px] font-medium">{zh ? "源文件夹" : "Source folder"}</div>
+            <button type="button" className="mb-3 flex h-[120px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-line bg-paper text-[14px] text-muted hover:bg-panel" onClick={() => void browse()} aria-busy={browsing}>
+              <Icon name="folder" size={22} />
+              {path ? <span className="max-w-full truncate px-4 text-ink">{path}</span> : <span>{zh ? "添加 Atlas 可读取和编辑的文件夹" : "Add a folder Atlas can read and edit"}</span>}
+            </button>
             <div className="flex gap-1.5">
               <input
-                autoFocus
                 value={path}
                 onChange={(event) => setPath(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && void choose(path, true)}
