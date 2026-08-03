@@ -145,8 +145,8 @@ export function InboxView({
       <div className="flex-1 min-w-0 overflow-y-auto hairline-scroll">
         <div className="max-w-4xl mx-auto px-7 py-6">
           <PanelHead
-            title="Inbox"
-            sub="Approvals, questions, and notifications from your coworkers — including sessions running unattended."
+            title="收件箱"
+            sub="来自协作 Agent 的审批、问题和通知，包括无人值守任务。"
           />
 
           <div className="flex gap-5 border-b border-line mb-4">
@@ -161,7 +161,7 @@ export function InboxView({
                 load();
               }}
             >
-              Pending
+              待处理
               {items.length > 0 && (
                 <span className="text-[11px] px-1.5 rounded-full bg-accentSoft text-accent leading-4">
                   {items.length}
@@ -173,7 +173,7 @@ export function InboxView({
               data-testid="inbox-tab-configure"
               onClick={() => setTab("configure")}
             >
-              Configure
+              配置
               {unroutedCount > 0 && (
                 <span className="text-[11px] px-1.5 rounded-full bg-warnSoft text-warnInk leading-4">
                   ⚠ {unroutedCount}
@@ -189,18 +189,17 @@ export function InboxView({
               <div className="text-[12px] text-faint -mt-1 mb-4" data-testid="inbox-routing">
                 {routing ? (
                   <span>
-                    Also delivered to{" "}
+                    同时发送到{" "}
                     <span className="text-muted" title={routing}>
                       {routingLabel}
                     </span>{" "}
-                    — replies there resolve items here.{" "}
+                    ——在那里回复即可处理此处事项。{" "}
                   </span>
                 ) : slackConnected ? (
-                  <span>Delivered here only. </span>
+                  <span>仅在此处接收。 </span>
                 ) : (
                   <span>
-                    Delivered here only. Connect Slack (Connectors page) to also get these in a
-                    channel — more platforms later.{" "}
+                    仅在此处接收。连接 Slack 后可同步到频道，后续将支持更多平台。{" "}
                   </span>
                 )}
                 <button
@@ -208,7 +207,7 @@ export function InboxView({
                   data-testid="inbox-route-configure"
                   onClick={() => setTab("configure")}
                 >
-                  Configure ›
+                  配置 ›
                 </button>
               </div>
 
