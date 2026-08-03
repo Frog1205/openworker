@@ -1516,7 +1516,7 @@ class SessionManager:
             ps = (
                 "Add-Type -AssemblyName System.Windows.Forms; "
                 "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
-                "$f.Description = 'Give the coworker access to a folder'; "
+                "$f.Description = '选择 Atlas 可读取和编辑的项目文件夹'; "
                 "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) "
                 "{ [Console]::Out.Write($f.SelectedPath) }"
             )
