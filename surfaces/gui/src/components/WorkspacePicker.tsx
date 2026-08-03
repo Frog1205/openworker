@@ -20,6 +20,7 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
   const [creating, setCreating] = useState(false);
   const [path, setPath] = useState("");
   const [error, setError] = useState("");
+  const [browsing, setBrowsing] = useState(false);
   const [position, setPosition] = useState({ left: 8, top: 8 });
 
   useLayoutEffect(() => {
@@ -51,10 +52,18 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
   };
 
   const browse = async () => {
-    const picked = await chooseFolder();
-    if (picked) {
-      setPath(picked);
-      if (creating) void choose(picked, true);
+    setError("");
+    setBrowsing(true);
+    try {
+      const picked = await chooseFolder();
+      if (picked) {
+        setPath(picked);
+        if (creating) void choose(picked, true);
+      } else {
+        setError(zh ? "无法打开目录选择器，请手动输入路径" : "The folder picker is unavailable; enter a path manually.");
+      }
+    } finally {
+      setBrowsing(false);
     }
   };
 
@@ -111,7 +120,6 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
               <span className="w-4 text-center text-[18px] leading-none">＋</span>
               {zh ? "新建项目" : "New project"}
             </button>
-            {current && (
               <button
                 type="button"
                 role="menuitem"
@@ -124,7 +132,6 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
                 <span className="w-4 text-center text-[18px] leading-none">×</span>
                 {zh ? "不在项目中工作" : "Don't work in a project"}
               </button>
-            )}
           </>
         ) : (
           <div className="p-1">
@@ -146,7 +153,16 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
                 placeholder={zh ? "输入文件夹路径" : "Folder path"}
                 className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2.5 py-2 text-[12px] outline-none focus:border-accent"
               />
-              <button type="button" className="rounded-lg border border-line px-2 text-[12px] hover:bg-paper" onClick={() => void browse()}>
+              <button
+                type="button"
+                className="rounded-lg border border-line px-2 text-[12px] hover:bg-paper disabled:opacity-50"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void browse();
+                }}
+                disabled={browsing}
+              >
                 {zh ? "浏览" : "Browse"}
               </button>
             </div>
