@@ -163,6 +163,7 @@ export function App() {
     document.title = t("browser.title", { product: productName });
   }, [productName, locale, t]);
   const [workspace, setWorkspace] = useState<string | null>(null);
+  const [mainWorkspace, setMainWorkspace] = useState<string | null>(null);
   const [branch, setBranch] = useState<string | null>(null);
   const [showGate, setShowGate] = useState(false);
   const [workspaceTrustRequest, setWorkspaceTrustRequest] =
@@ -479,7 +480,10 @@ export function App() {
           // initial sessionId would connect against an empty/stale workspace and the server
           // would provision a junk per-conversation scratch dir for it before resume could
           // flip to the real session. Cowork ignores default_workspace (a Code concept).
-          if (h.default_workspace && gatesWorkspace(agent)) setWorkspace(h.default_workspace);
+          if (h.default_workspace) {
+            setMainWorkspace(h.default_workspace);
+            if (needsWorkspace(agent) && !workspace) setWorkspace(h.default_workspace);
+          }
           else await resumeLastOrGate();
           // The mount-time loadSettings races the sidecar boot and swallows its failure —
           // on a cold start that left "Loading models…" stuck until the user visited
@@ -1451,6 +1455,12 @@ export function App() {
                 </button>
               </div>
             )}
+            {running && agent !== "chat" && (workspace || mainWorkspace) && (
+              <div className="topbar-workspace" title={workspace || mainWorkspace || ""}>
+                <Icon name="folder" size={14} />
+                <span>{baseName(workspace || mainWorkspace || "")}</span>
+              </div>
+            )}
             {/* §32: no session-settings row up here anymore — the §23 rest/hover/click glance
                 machinery retired with the drawer. "What can this touch" lives permanently on
                 the rail's Access section header; the panel toggle is the one entry. */}
@@ -1635,7 +1645,7 @@ export function App() {
               onModeChange={changeMode}
               onModelChange={changeModel}
               sessionId={sessionId}
-              workspace={needsWorkspace(agent) ? workspace || "" : undefined}
+              workspace={needsWorkspace(agent) ? workspace || mainWorkspace || "" : undefined}
               workspacePickerEnabled={agent !== "chat"}
               showWorkspacePicker={!running}
               onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
