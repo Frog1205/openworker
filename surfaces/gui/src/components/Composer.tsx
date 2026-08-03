@@ -6,7 +6,7 @@ import { formatTokens, totalTokens } from "../usage";
 import { Dropdown, type Option } from "./Dropdown";
 import { Icon } from "./Icon";
 import { Toggle } from "./Toggle";
-import { FolderGate } from "./FolderGate";
+import { WorkspacePicker } from "./WorkspacePicker";
 import { useI18n } from "../I18nProvider";
 import {
   cancelDictation,
@@ -69,6 +69,7 @@ interface Props {
   // task, matching Codex's explicit workspace control rather than hiding it in setup.
   workspacePickerEnabled?: boolean;
   onWorkspaceChange?: (path: string, branch?: string | null) => void;
+  onWorkspaceClear?: () => void;
   // Unattended / send-approvals-to-Inbox — folded into the Mode menu (§22): "who approves, and
   // when" is one mental model. Absent handler = no toggle (e.g. Chat).
   unattended?: boolean;
@@ -701,13 +702,12 @@ export function Composer(props: Props) {
       <span className="sr-only" role="status" aria-live="polite">
         {dictation?.recording ? `Listening, ${recordingTime}` : dictationBusy || ""}
       </span>
-      {workspacePickerOpen && props.onWorkspaceChange && (
-        <FolderGate
-          onChoose={(path, selectedBranch) => {
-            setWorkspacePickerOpen(false);
-            props.onWorkspaceChange?.(path, selectedBranch);
-          }}
-          onCancel={() => setWorkspacePickerOpen(false)}
+      {workspacePickerOpen && props.onWorkspaceChange && props.onWorkspaceClear && (
+        <WorkspacePicker
+          current={props.workspace || ""}
+          onChoose={props.onWorkspaceChange}
+          onClear={props.onWorkspaceClear}
+          onClose={() => setWorkspacePickerOpen(false)}
         />
       )}
     </div>
