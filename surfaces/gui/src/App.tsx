@@ -383,6 +383,9 @@ export function App() {
   }, []);
 
   const sessionRef = useRef<Session | null>(null);
+  // Explicit new tasks must stay unscoped even if the server reports a previously used folder
+  // while opening the fresh session. Normal session restore/selection still adopts its folder.
+  const suppressWorkspaceAdoptionRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // A prompt to auto-send once the next session connects (used by "Run now").
   const pendingPromptRef = useRef<string | null>(null);
@@ -606,7 +609,9 @@ export function App() {
           if (d.mode) setMode(d.mode);
           if (d.command_trust?.required) setWorkspaceTrustRequest(d.command_trust);
           // Cowork: adopt the server-provisioned scratch dir (only when we don't already have one).
-          if (d.workspace) setWorkspace((cur) => cur || d.workspace);
+          if (d.workspace && !suppressWorkspaceAdoptionRef.current) {
+            setWorkspace((cur) => cur || d.workspace);
+          }
           break;
         case "turn_start":
           setRunning(true);
@@ -939,6 +944,7 @@ export function App() {
     setStreaming("");
     setTodo([]);
     setRunning(false);
+    suppressWorkspaceAdoptionRef.current = true;
     // "New session" under a browsed persona switches to it (expand≠switch: the header alone
     // doesn't switch; this explicit action does).
     // Every explicit new task starts without a project context. Project-scoped personas will
@@ -990,6 +996,7 @@ export function App() {
     setTodo([]);
     setStreaming("");
     setRunning(false);
+    suppressWorkspaceAdoptionRef.current = false;
     if (ag) setAgent(ag);
     if (!gatesWorkspace(ag)) setShowGate(false);
     if (ws && ws !== workspace) {
@@ -1069,6 +1076,7 @@ export function App() {
     else setShowGate(!fallback);
   };
   const chooseWorkspace = (path: string, b?: string | null) => {
+    suppressWorkspaceAdoptionRef.current = false;
     setWorkspace(path);
     setBranch(b ?? null);
     setShowGate(false);

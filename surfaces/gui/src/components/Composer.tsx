@@ -519,11 +519,11 @@ export function Composer(props: Props) {
           </div>
         )}
         {props.workspacePickerEnabled && props.workspace !== undefined && (
-          <div className="absolute left-4 -top-3 z-10">
+          <div className="absolute left-0 right-0 -top-12 z-10 h-12 rounded-t-2xl border border-line bg-paper px-4 shadow-sm">
             <button
               type="button"
               ref={workspaceButtonRef}
-              className="chip flex items-center gap-1.5 max-w-[220px] rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12px] text-muted shadow-sm hover:text-ink hover:bg-paper"
+              className="flex h-full w-full items-center gap-2 text-[13px] text-muted hover:text-ink"
               title={props.workspace || (zh ? "选择项目空间" : "Choose project workspace")}
               aria-label={zh ? "选择项目空间" : "Choose project workspace"}
               onClick={() => setWorkspacePickerOpen(true)}
