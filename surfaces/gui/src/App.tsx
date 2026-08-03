@@ -1637,6 +1637,7 @@ export function App() {
               sessionId={sessionId}
               workspace={needsWorkspace(agent) ? workspace || "" : undefined}
               workspacePickerEnabled={agent !== "chat"}
+              showWorkspacePicker={!running}
               onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
               onWorkspaceClear={agent !== "chat" ? clearWorkspace : undefined}
               unattended={unattended}

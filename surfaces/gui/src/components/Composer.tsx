@@ -67,6 +67,8 @@ interface Props {
   // Opens the project-space picker. The selected folder is standing context for the
   // task, matching Codex's explicit workspace control rather than hiding it in setup.
   workspacePickerEnabled?: boolean;
+  /** Hide the workspace chrome while a turn is running so progress cards stay unobstructed. */
+  showWorkspacePicker?: boolean;
   onWorkspaceChange?: (path: string, branch?: string | null) => void;
   onWorkspaceClear?: () => void;
   // Unattended / send-approvals-to-Inbox — folded into the Mode menu (§22): "who approves, and
@@ -517,7 +519,7 @@ export function Composer(props: Props) {
             )}
           </div>
         )}
-        {props.workspacePickerEnabled && props.workspace !== undefined && (
+        {props.workspacePickerEnabled && props.showWorkspacePicker !== false && props.workspace !== undefined && (
           <div className="absolute left-0 right-0 -top-12 z-10 h-12 rounded-t-2xl border border-line bg-paper px-4 shadow-sm">
             <button
               type="button"
@@ -701,7 +703,7 @@ export function Composer(props: Props) {
       <span className="sr-only" role="status" aria-live="polite">
         {dictation?.recording ? `Listening, ${recordingTime}` : dictationBusy || ""}
       </span>
-      {workspacePickerOpen && props.onWorkspaceChange && props.onWorkspaceClear && (
+      {workspacePickerOpen && props.showWorkspacePicker !== false && props.onWorkspaceChange && props.onWorkspaceClear && (
         <WorkspacePicker
           current={props.workspace || ""}
           onChoose={props.onWorkspaceChange}
