@@ -738,10 +738,10 @@ export interface ModelSettings {
   compaction_threshold_pct?: number; // default 0.8, 0.10–0.95
   compaction_cap_tokens?: number; // default 250000
   compaction_model?: string;
-  custom_models?: Array<{ slug: string; name: string; model: string; protocol: "openai" | "claude"; base_url: string }>;
+  custom_models?: Array<{ slug: string; name: string; vendor?: string; model: string; protocol: "openai" | "claude"; base_url: string }>;
 }
 
-export async function addCustomModel(input: { name: string; model: string; protocol: "openai" | "claude"; base_url: string; api_key: string }): Promise<ModelSettings & { ok: boolean; error?: string }> {
+export async function addCustomModel(input: { name: string; vendor: string; model: string; protocol: "openai" | "claude"; base_url: string; api_key: string }): Promise<ModelSettings & { ok: boolean; error?: string }> {
   const res = await fetch(`${httpBase()}/v1/settings/custom-models`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
   return res.json();
 }
@@ -752,8 +752,15 @@ export async function removeCustomModel(slug: string): Promise<ModelSettings & {
 }
 
 export async function testCustomModel(input: { model: string; protocol: "openai" | "claude"; base_url: string; api_key: string }): Promise<{ ok: boolean; error?: string; message?: string; preview?: string }> {
-  const res = await fetch(`${httpBase()}/v1/settings/custom-models/test`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
-  return res.json();
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(`${httpBase()}/v1/settings/custom-models/test`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input), signal: controller.signal });
+    const data = await res.json().catch(() => ({}));
+    return res.ok ? data : { ok: false, error: data.error || `HTTP ${res.status}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof DOMException && e.name === "AbortError" ? "测试超时（30 秒）" : "网络请求失败" };
+  } finally { window.clearTimeout(timer); }
 }
 
 export interface PdfSettings {
