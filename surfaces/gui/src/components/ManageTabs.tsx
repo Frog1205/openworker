@@ -175,6 +175,7 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [vendor, setVendor] = useState("");
   const [model, setModel] = useState("");
   const [protocol, setProtocol] = useState<"openai" | "claude">("openai");
   const [baseUrl, setBaseUrl] = useState("");
@@ -185,10 +186,10 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
   const [error, setError] = useState("");
   const save = async () => {
     setSaving(true); setError("");
-    const r = await addCustomModel({ name, model, protocol, base_url: baseUrl, api_key: apiKey }).catch(() => ({ ok: false, error: "network" }));
+    const r = await addCustomModel({ name, vendor, model, protocol, base_url: baseUrl, api_key: apiKey }).catch(() => ({ ok: false, error: "network" }));
     setSaving(false);
     if (!r.ok) { setError(r.error || t("settings.models.custom.error")); return; }
-    setName(""); setModel(""); setBaseUrl(""); setApiKey(""); setOpen(false); onChanged();
+    setName(""); setVendor(""); setModel(""); setBaseUrl(""); setApiKey(""); setOpen(false); onChanged();
   };
   const test = async () => {
     setTesting(true); setTestResult("");
@@ -200,9 +201,10 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
       <div><div className="text-[14px] font-semibold">{t("settings.models.custom.title")}</div><p className="text-[12px] text-muted mt-1 leading-relaxed">{t("settings.models.custom.help")}</p></div>
       <button className={BTN_ACCENT} onClick={() => setOpen((v) => !v)}>{open ? t("settings.models.custom.cancel") : t("settings.models.custom.add")}</button>
     </div>
-    {(settings.custom_models || []).length > 0 && <div className="mt-3 space-y-1.5">{(settings.custom_models || []).map((m) => <div className="flex items-center justify-between rounded-lg border border-line bg-paper px-3 py-2" key={m.slug}><div><div className="text-[13px]">{m.name}</div><div className="text-[11px] text-muted">{m.protocol.toUpperCase()} · {m.model}</div></div><button className={BTN_DANGER} onClick={() => removeCustomModel(m.slug).then((r) => r.ok && onChanged())}>{t("settings.models.custom.remove")}</button></div>)}</div>}
+    {(settings.custom_models || []).length > 0 && <div className="mt-3 space-y-1.5">{(settings.custom_models || []).map((m) => <div className="flex items-center justify-between rounded-lg border border-line bg-paper px-3 py-2" key={m.slug}><div><div className="text-[13px]">{m.name}</div><div className="text-[11px] text-muted">{m.vendor || t("settings.models.custom.vendorDefault")} · {m.protocol.toUpperCase()} · {m.model}</div></div><button className={BTN_DANGER} onClick={() => removeCustomModel(m.slug).then((r) => r.ok && onChanged())}>{t("settings.models.custom.remove")}</button></div>)}</div>}
     {open && <div className="mt-4 grid gap-2 sm:grid-cols-2">
       <input className="field" placeholder={t("settings.models.custom.name")} value={name} onChange={(e) => setName(e.target.value)} />
+      <input className="field" placeholder={t("settings.models.custom.vendor")} value={vendor} onChange={(e) => setVendor(e.target.value)} />
       <input className="field" placeholder={t("settings.models.custom.model")} value={model} onChange={(e) => setModel(e.target.value)} />
       <select className="field" value={protocol} onChange={(e) => setProtocol(e.target.value as "openai" | "claude")}><option value="openai">OpenAI 协议（Chat Completions）</option><option value="claude">Claude 协议（Messages）</option></select>
       <input className="field" placeholder={protocol === "openai" ? "https://proxy.example.com/v1" : "https://proxy.example.com/v1"} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />

@@ -1427,7 +1427,7 @@ def create_app(manager: SessionManager) -> FastAPI:
     @app.post("/v1/settings/custom-models")
     def settings_custom_model_add(body: dict) -> dict[str, Any]:
         b = body or {}
-        return manager.add_custom_model(b.get("name", ""), b.get("model", ""), b.get("protocol", "openai"), b.get("base_url", ""), b.get("api_key", ""))
+        return manager.add_custom_model(b.get("name", ""), b.get("model", ""), b.get("protocol", "openai"), b.get("base_url", ""), b.get("api_key", ""), b.get("vendor", ""))
 
     @app.delete("/v1/settings/custom-models/{slug}")
     def settings_custom_model_remove(slug: str) -> dict[str, Any]:

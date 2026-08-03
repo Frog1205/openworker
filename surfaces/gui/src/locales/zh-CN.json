@@ -94,6 +94,8 @@
   "settings.models.custom.add": "添加自定义模型",
   "settings.models.custom.remove": "移除",
   "settings.models.custom.name": "显示名称",
+  "settings.models.custom.vendor": "模型厂商名称",
+  "settings.models.custom.vendorDefault": "自定义厂商",
   "settings.models.custom.model": "上游模型名称",
   "settings.models.custom.key": "API 密钥",
   "settings.models.custom.save": "保存并添加",

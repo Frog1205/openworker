@@ -155,6 +155,8 @@
   "settings.models.custom.add": "Add custom model",
   "settings.models.custom.remove": "Remove",
   "settings.models.custom.name": "Display name",
+  "settings.models.custom.vendor": "Model vendor",
+  "settings.models.custom.vendorDefault": "Custom vendor",
   "settings.models.custom.model": "Upstream model name",
   "settings.models.custom.key": "API key",
   "settings.models.custom.save": "Save and add",

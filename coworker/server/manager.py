@@ -1805,7 +1805,7 @@ class SessionManager:
         return {"ok": True, **self.get_settings()}
 
     def add_custom_model(
-        self, name: str, model: str, protocol: str, base_url: str, api_key: str
+        self, name: str, model: str, protocol: str, base_url: str, api_key: str, vendor: str = ""
     ) -> dict[str, Any]:
         """Register a model backed by a user-supplied OpenAI- or Claude-compatible relay."""
         import re
@@ -1815,6 +1815,7 @@ class SessionManager:
         scheme = str(protocol or "openai").strip().lower()
         endpoint = str(base_url or "").strip().rstrip("/")
         key = str(api_key or "").strip()
+        vendor_name = str(vendor or "").strip() or "自定义厂商"
         if not label or not target or scheme not in {"openai", "claude"} or not endpoint or not key:
             return {"ok": False, "error": "name, model, protocol, endpoint and api_key are required"}
         slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", label.lower()).strip("-") or "model"
@@ -1825,9 +1826,17 @@ class SessionManager:
             slug = f"{base}-{n}"
             n += 1
         self.secrets.put(f"custom-model:{slug}", {"model": target, "protocol": scheme, "base_url": endpoint, "api_key": key})
-        custom = self._prefs.setdefault("custom_models", [])
-        custom.append({"slug": slug, "name": label, "model": target, "protocol": scheme, "base_url": endpoint})
-        self._prefs.setdefault("models", []).append(f"custom:{slug}")
+        custom = self._prefs.get("custom_models")
+        if not isinstance(custom, list):
+            custom = []
+        self._prefs["custom_models"] = custom
+        custom.append({"slug": slug, "name": label, "vendor": vendor_name, "model": target, "protocol": scheme, "base_url": endpoint})
+        models = self._prefs.get("models")
+        if not isinstance(models, list):
+            models = []
+        if f"custom:{slug}" not in models:
+            models.append(f"custom:{slug}")
+        self._prefs["models"] = models
         self._save_prefs()
         return {"ok": True, **self.get_settings()}
 
@@ -1895,6 +1904,8 @@ class SessionManager:
         # Ollama is keyless, so "configured" is meaningless there — its models show only
         # while a local Ollama answers (cached liveness probe).
         def _selectable(m: str) -> bool:
+            if m.startswith("custom:"):
+                return bool(self.secrets.get(f"custom-model:{m.split(':', 1)[1]}"))
             provider = self._model_provider(m)
             if provider == "ollama":
                 return self._ollama_alive()
