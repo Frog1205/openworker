@@ -68,6 +68,7 @@ import { ApprovalCard } from "./components/ApprovalCard";
 import { DirectoryRequestCard } from "./components/DirectoryRequestCard";
 import { PlanCard } from "./components/PlanCard";
 import { WorkspaceTrustPrompt } from "./components/WorkspaceTrustPrompt";
+import { WorkspacePicker } from "./components/WorkspacePicker";
 
 const newId = () =>
   (crypto as any).randomUUID ? crypto.randomUUID().slice(0, 12) : Math.random().toString(36).slice(2, 14);
@@ -164,6 +165,8 @@ export function App() {
   }, [productName, locale, t]);
   const [workspace, setWorkspace] = useState<string | null>(null);
   const [mainWorkspace, setMainWorkspace] = useState<string | null>(null);
+  const [workspaceTopPickerOpen, setWorkspaceTopPickerOpen] = useState(false);
+  const workspaceTopButtonRef = useRef<HTMLButtonElement>(null);
   const [branch, setBranch] = useState<string | null>(null);
   const [showGate, setShowGate] = useState(false);
   const [workspaceTrustRequest, setWorkspaceTrustRequest] =
@@ -1455,11 +1458,12 @@ export function App() {
                 </button>
               </div>
             )}
-            {running && agent !== "chat" && (workspace || mainWorkspace) && (
-              <div className="topbar-workspace" title={workspace || mainWorkspace || ""}>
+            {agent !== "chat" && (workspace || mainWorkspace) && (
+              <button ref={workspaceTopButtonRef} className="topbar-workspace" title={workspace || mainWorkspace || ""} onClick={() => setWorkspaceTopPickerOpen(true)}>
                 <Icon name="folder" size={14} />
                 <span>{baseName(workspace || mainWorkspace || "")}</span>
-              </div>
+                <Icon name="chevronDown" size={11} />
+              </button>
             )}
             {/* §32: no session-settings row up here anymore — the §23 rest/hover/click glance
                 machinery retired with the drawer. "What can this touch" lives permanently on
@@ -1647,7 +1651,7 @@ export function App() {
               sessionId={sessionId}
               workspace={needsWorkspace(agent) ? workspace || mainWorkspace || "" : undefined}
               workspacePickerEnabled={agent !== "chat"}
-              showWorkspacePicker={!running}
+              showWorkspacePicker={false}
               onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
               onWorkspaceClear={agent !== "chat" ? clearWorkspace : undefined}
               unattended={unattended}
@@ -1718,8 +1722,17 @@ export function App() {
             openAccessKey={accessKey}
             onOpenIntegrations={() => setSurface("integrations")}
           />
+          </div>
+          {workspaceTopPickerOpen && agent !== "chat" && (
+            <WorkspacePicker
+              current={workspace || mainWorkspace || ""}
+              onChoose={chooseWorkspace}
+              onClear={clearWorkspace}
+              onClose={() => setWorkspaceTopPickerOpen(false)}
+              anchorRef={workspaceTopButtonRef}
+            />
+          )}
         </div>
-      </div>
       )}
 
       {/* Search from the collapsed-sidebar topbar cluster (the sidebar's own instance is
