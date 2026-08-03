@@ -1874,7 +1874,10 @@ class SessionManager:
                 turn = provider.complete(model=target, messages=[{"role": "user", "content": "Reply with OK only."}], max_tokens=16, temperature=0)
             return {"ok": True, "message": "连接成功", "preview": (turn.text or "").strip()[:80]}
         except Exception as exc:
-            return {"ok": False, "error": str(exc)[:500]}
+            detail = str(exc)
+            if "404" in detail:
+                detail = "上游返回 404：请确认中转地址以 /v1 结尾，并将模型名填写为 deepseek-chat 等模型 ID（不要把接口地址填到模型名）"
+            return {"ok": False, "error": detail[:500]}
 
     def remove_model(self, model: str) -> dict[str, Any]:
         """Remove a model id from the picker. Custom ids are dropped; matrix models are
