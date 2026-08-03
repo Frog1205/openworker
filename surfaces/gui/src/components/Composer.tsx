@@ -26,7 +26,10 @@ import {
 // goes stale and silently offers ids the backend never confirmed (caught 2026-07-21).
 
 // Drop the provider prefix for display (anthropic:claude-opus-4-8 → claude-opus-4-8); full id on hover.
-const shortModel = (m: string) => (m.includes(":") ? m.split(":").slice(1).join(":") : m);
+const shortModel = (m: string | undefined) => {
+  const value = m || "";
+  return value.includes(":") ? value.split(":").slice(1).join(":") : value;
+};
 
 // Identify an attachment by name + payload size so duplicates (e.g. the same file picked twice,
 // or a prefill applied twice) collapse to one chip.

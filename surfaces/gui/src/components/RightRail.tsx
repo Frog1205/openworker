@@ -1,20 +1,24 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 // Emits the asset URL only; the worker itself loads lazily with the pdfjs chunk.
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   getArtifacts,
+  getBrowserState,
+  executeWorkspaceCommand,
+  openBrowserUrl,
   readArtifact,
   revealArtifact,
   type ArtifactContent,
   type ArtifactInfo,
 } from "../api";
-import type { TodoItem } from "../types";
+import type { Item, TodoItem } from "../types";
+import type { BrowserState } from "../api";
 import { AccessSection } from "./AccessSection";
 import { Icon } from "./Icon";
 import { Markdown, OPEN_ARTIFACT_EVENT } from "./Markdown";
 import { useI18n } from "../I18nProvider";
 
-type Panel = "progress" | "artifacts";
+type Panel = "chat" | "browser" | "terminal" | "progress" | "artifacts";
 
 // Quiet file-type icons for the artifact list (the colored kind pills read as noisy).
 function kindIcon(kind: string): "file" | "fileCode" | "image" | "table" {
@@ -43,6 +47,7 @@ interface Props {
   refreshKey: number;
   toolNames: string[];
   todo: TodoItem[];
+  items?: Item[];
   running: boolean;
   // Fires when a full artifact preview opens/closes, so the app can auto-collapse the left nav
   // to give the preview (PDF/webpage/sheet) more room (#3).
@@ -66,6 +71,7 @@ export function RightRail({
   refreshKey,
   toolNames,
   todo,
+  items = [],
   running,
   onPreviewChange,
   showArtifacts = true,
@@ -78,19 +84,19 @@ export function RightRail({
   onOpenIntegrations,
 }: Props) {
   const { locale, t } = useI18n();
-  const [open, setOpen] = useState<Record<Panel, boolean>>({
-    progress: true,
-    artifacts: true,
-  });
+  const [panel, setPanel] = useState<Panel>("progress");
+  const [open, setOpen] = useState<Record<"progress" | "artifacts", boolean>>({ progress: true, artifacts: true });
   const [artifacts, setArtifacts] = useState<ArtifactInfo[]>([]);
   const [selected, setSelected] = useState<ArtifactInfo | null>(null);
   const [content, setContent] = useState<ArtifactContent | null>(null);
+  const [browser, setBrowser] = useState<BrowserState | null>(null);
 
   const refreshArtifacts = () => getArtifacts(sessionId).then(setArtifacts).catch(() => setArtifacts([]));
 
   useEffect(() => {
     if (!active) return;
     if (showArtifacts) refreshArtifacts();
+    getBrowserState().then(setBrowser).catch(() => setBrowser(null));
   }, [active, sessionId, refreshKey, showArtifacts]);
 
   // Switching conversations closes any open artifact — it belongs to the previous session's
@@ -153,7 +159,7 @@ export function RightRail({
   if (!active) return null;
 
   return (
-    <aside className={"right-rail" + (selected ? " artifact-mode" : "")}>
+    <aside className={"right-rail" + (selected ? " artifact-mode" : panel === "browser" ? " browser-mode" : "")}>
       {selected ? (
         <ArtifactViewer
           sessionId={sessionId}
@@ -173,11 +179,16 @@ export function RightRail({
         />
       ) : (
         <>
+          <RailTabs panel={panel} onChange={setPanel} artifactCount={artifacts.length} hasChatContext={items.some((item) => item.kind === "user" || item.kind === "assistant")} />
+          {panel === "chat" && <SideChat items={items} />}
+          {panel === "browser" && <BrowserPanel state={browser} onRefresh={() => getBrowserState().then(setBrowser).catch(() => {})} />}
+          {panel === "terminal" && <TerminalPanel items={items} workspace={workspace} />}
+          {panel === "progress" && <>
           <RailSection title={t("rail.progress")} open={open.progress} onToggle={() => setOpen({ ...open, progress: !open.progress })}>
             <ProgressSummary running={running} toolNames={toolNames} todo={todo} />
           </RailSection>
 
-          {showArtifacts && (
+          {false && showArtifacts && (
           <RailSection
             title={`${t("rail.artifacts")}${artifacts.length ? ` (${artifacts.length})` : ""}`}
             open={open.artifacts}
@@ -220,7 +231,11 @@ export function RightRail({
 
           {/* §32: Access — the former Session-settings drawer, one section among peers.
               key: its data ownership resets with the conversation, like the old row did. */}
-          <AccessSection
+          </>}
+
+          {panel === "artifacts" && showArtifacts && <ArtifactList artifacts={artifacts} sessionId={sessionId} refresh={refreshArtifacts} onSelect={setSelected} />}
+
+          {panel === "progress" && <AccessSection
             key={sessionId}
             sessionId={sessionId}
             personaId={personaId}
@@ -230,11 +245,55 @@ export function RightRail({
             scratchPrimary={scratchPrimary}
             openKey={openAccessKey}
             onOpenIntegrations={onOpenIntegrations}
-          />
+          />}
         </>
       )}
     </aside>
   );
+}
+
+function RailTabs({ panel, onChange, artifactCount, hasChatContext }: { panel: Panel; onChange: (panel: Panel) => void; artifactCount: number; hasChatContext: boolean }) {
+  const { locale, t } = useI18n();
+  const tabs: { key: Panel; label: string; icon: "chat" | "globe" | "code" | "clock" | "file" }[] = [
+    { key: "chat", label: locale === "zh-CN" ? "侧边聊天" : "Side chat", icon: "chat" },
+    { key: "browser", label: locale === "zh-CN" ? "浏览器" : "Browser", icon: "globe" },
+    { key: "terminal", label: locale === "zh-CN" ? "终端" : "Terminal", icon: "code" },
+    { key: "progress", label: t("rail.progress"), icon: "clock" },
+    { key: "artifacts", label: `${t("rail.artifacts")}${artifactCount ? ` (${artifactCount})` : ""}`, icon: "file" },
+  ];
+  return <div className="rail-tabs" role="tablist">{tabs.filter((tab) => tab.key !== "chat" || hasChatContext).map((tab) => <button key={tab.key} role="tab" aria-selected={panel === tab.key} className={"rail-tab" + (panel === tab.key ? " active" : "")} onClick={() => onChange(tab.key)}><Icon name={tab.icon} size={14} /><span>{tab.label}</span></button>)}</div>;
+}
+
+function SideChat({ items }: { items: Item[] }) {
+  const messages = items.filter((item) => item.kind === "user" || item.kind === "assistant").slice(-8);
+  const [draft, setDraft] = useState("");
+  const [sideMessages, setSideMessages] = useState<string[]>([]);
+  if (!messages.length) return null;
+  return <div className="rail-side-chat"><div className="rail-muted">主任务上下文（只读）</div>{messages.map((item, index) => <div className={"rail-chat-line " + item.kind} key={index}><span>{item.kind === "user" ? "你" : "Atlas"}</span><p>{item.text}</p></div>)}{sideMessages.map((text, index) => <div className="rail-chat-line user" key={`side-${index}`}><span>侧边聊天</span><p>{text}</p></div>)}<form className="rail-side-composer" onSubmit={(event) => { event.preventDefault(); if (!draft.trim()) return; setSideMessages((items) => [...items, draft.trim()]); setDraft(""); }}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="独立侧边聊天…" /><button className="btn sm" type="submit">发送</button></form></div>;
+}
+
+function BrowserPanel({ state, onRefresh }: { state: BrowserState | null; onRefresh: () => void }) {
+  const [url, setUrl] = useState(state?.url || "");
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState("");
+  if (!state) return <div className="rail-muted">正在加载浏览器状态…</div>;
+  const open = async () => { if (!url.trim()) return; setOpening(true); setError(""); const result = await openBrowserUrl(url.trim()).catch((e) => ({ error: String(e) })); if (result.error) setError(result.error); setOpening(false); onRefresh(); };
+  return <div className="rail-browser"><div className="browser-tabs"><span className="browser-tab-active"><Icon name="globe" size={13} />{state.title || "新标签页"}<span>×</span></span><span className="browser-tab-plus">＋</span></div><div className="browser-toolbar"><button className="rail-mini-btn" onClick={onRefresh}>‹</button><button className="rail-mini-btn" onClick={onRefresh}>›</button><button className="rail-mini-btn" onClick={onRefresh}>↻</button><form className="browser-address" onSubmit={(event) => { event.preventDefault(); void open(); }}><input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="输入 URL" /></form><span className="browser-menu">⋮</span></div>{error && <div className="rail-error">{error}</div>}{state.screenshot_data_url ? <img className="browser-shot browser-page" src={state.screenshot_data_url} /> : <div className="browser-home"><Icon name="globe" size={40} /><strong>开始浏览</strong><span>输入 URL 以打开页面</span></div>}<button className="btn sm" disabled={opening} onClick={onRefresh}>{opening ? "正在打开…" : "刷新状态"}</button></div>;
+}
+
+function TerminalPanel({ items, workspace }: { items: Item[]; workspace?: string }) {
+  const tools = items.filter((item) => item.kind === "tool").slice(-12);
+  const [command, setCommand] = useState("");
+  const [history, setHistory] = useState<{ command: string; output: string; code?: number }[]>([]);
+  const [running, setRunning] = useState(false);
+  const submit = async (event: FormEvent) => { event.preventDefault(); const next = command.trim(); if (!next || !workspace || running) return; setCommand(""); setRunning(true); const result: { ok?: boolean; output?: string; code?: number; error?: string } = await executeWorkspaceCommand(workspace, next).catch((error) => ({ ok: false, output: String(error), code: -1 })); setHistory((lines) => [...lines, { command: next, output: result.output || (result.ok ? "" : result.error || "命令执行失败"), code: result.code }]); setRunning(false); };
+  return <div className="embedded-terminal"><div className="terminal-tabs"><span className="terminal-tab-active"><Icon name="code" size={13} />管理员: Windows PowerShell <span>×</span></span><span className="terminal-tab-plus">＋</span></div><div className="terminal-body"><div className="terminal-banner">Windows PowerShell<br />Copyright (C) Microsoft Corporation. All rights reserved.</div>{history.map((entry, index) => <div className="terminal-entry" key={`command-${index}`}><div className="terminal-command"><span>PS {workspace || ""}&gt;</span> {entry.command}</div>{entry.output && <pre className={entry.code ? "terminal-output error" : "terminal-output"}>{entry.output}</pre>}</div>)}{tools.map((item, index) => <div className="terminal-command terminal-tool" key={`tool-${index}`}><span>{item.status}</span> {item.name}{item.preview ? ` — ${item.preview}` : ""}</div>)}<form className="terminal-prompt" onSubmit={submit}><span>PS {workspace || ""}&gt;</span><input aria-label="终端命令" value={command} onChange={(event) => setCommand(event.target.value)} autoFocus disabled={running || !workspace} placeholder={running ? "正在执行…" : "输入命令"} /></form></div></div>;
+}
+
+function ArtifactList({ artifacts, sessionId, refresh, onSelect }: { artifacts: ArtifactInfo[]; sessionId: string; refresh: () => void; onSelect: (artifact: ArtifactInfo) => void }) {
+  const { locale, t } = useI18n();
+  if (!artifacts.length) return <div className="rail-muted">{t("rail.noArtifacts")}</div>;
+  return <div className="artifact-list">{artifacts.slice(0, 16).map((artifact) => <button className="artifact-row" key={artifact.path} onClick={() => onSelect(artifact)}><span className="artifact-ico"><Icon name={kindIcon(artifact.kind)} size={17} /></span><span className="artifact-name">{artifact.name}<span className="artifact-row-meta">{formatBytes(artifact.size)} · {formatTime(artifact.modified_at, locale)}</span></span><span className="artifact-open">{t("common.open")}</span></button>)}<div className="rail-actions"><button className="btn sm" onClick={() => revealArtifact(sessionId, artifacts[0].path, "reveal")}>{t("rail.showFolder")}</button><button className="btn sm" onClick={refresh}>{t("rail.refresh")}</button></div></div>;
 }
 
 function ProgressSummary({ running, toolNames, todo }: { running: boolean; toolNames: string[]; todo: TodoItem[] }) {

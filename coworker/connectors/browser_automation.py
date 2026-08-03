@@ -583,3 +583,16 @@ def make_browser_automation_tools() -> list[Callable[..., Any]]:
     )
 
     return tools
+
+
+def browser_open_url_session(url: str) -> dict[str, Any]:
+    """Navigate the shared local browser from the desktop side panel."""
+    if not url.lower().startswith(("http://", "https://")):
+        return {"ok": False, "error": "url must start with http:// or https://"}
+    blocked = check_url(url)
+    if blocked:
+        return {"ok": False, "error": blocked}
+    return _BROWSER.call(
+        "open_url",
+        lambda page: (page.goto(url, wait_until="domcontentloaded", timeout=30000), {"ok": True, "url": page.url})[1],
+    )

@@ -1192,7 +1192,7 @@ export function App() {
   // noise in a facts line. Fall back to the raw id without its provider prefix.
   const modelDisplay =
     modelLabels[model]?.split(" · ")[0] ||
-    (model.includes(":") ? model.split(":").slice(1).join(":") : model);
+    (model ? (model.includes(":") ? model.split(":").slice(1).join(":") : model) : "");
   // Persona name dropped for this release (owner ask 2026-07-22): personas are hidden,
   // so "Coworker" read as noise. The model (+ project folder) are the real fixed facts.
   const subtitleParts = [modelDisplay];
@@ -1710,13 +1710,14 @@ export function App() {
             sessionId={sessionId}
             refreshKey={browserRefreshKey}
             toolNames={items.filter((i) => i.kind === "tool").map((i: any) => i.name)}
+            items={items}
             todo={todo}
             running={running}
             onPreviewChange={onArtifactPreview}
             showArtifacts={agent === "cowork"}
             personaId={agent}
             projectScoped={isProjectScoped(personaOf(agent))}
-            workspace={workspace || undefined}
+            workspace={workspace || mainWorkspace || undefined}
             branch={branch}
             scratchPrimary={agent === "cowork"}
             openAccessKey={accessKey}

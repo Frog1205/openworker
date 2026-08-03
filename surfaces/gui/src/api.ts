@@ -78,6 +78,7 @@ export interface WorkspaceCommandTrust {
 
 export async function getHealth(): Promise<Health> {
   const res = await fetch(`${httpBase()}/v1/health`);
+  if (!res.ok) throw new Error(`health unavailable (${res.status})`);
   return res.json();
 }
 
@@ -682,6 +683,22 @@ export interface BrowserState {
 
 export async function getBrowserState(): Promise<BrowserState> {
   const res = await fetch(`${httpBase()}/v1/browser/state`);
+  return res.json();
+}
+
+export async function openBrowserUrl(url: string): Promise<BrowserState & { ok?: boolean; error?: string }> {
+  const res = await fetch(`${httpBase()}/v1/browser/open`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
+  return res.json();
+}
+
+export async function openWorkspaceTerminal(workspace: string): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${httpBase()}/v1/terminal/open`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace }) });
+  return res.json();
+}
+
+export async function executeWorkspaceCommand(workspace: string, command: string): Promise<{ ok?: boolean; output?: string; code?: number; error?: string }> {
+  const res = await fetch(`${httpBase()}/v1/terminal/exec`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace, command }) });
+  if (!res.ok) return { ok: false, output: `终端请求失败（HTTP ${res.status}）`, code: res.status };
   return res.json();
 }
 
@@ -1305,7 +1322,8 @@ export async function getInbox(sessionId?: string, state?: string): Promise<Inbo
   if (sessionId) q.set("session_id", sessionId);
   if (state) q.set("state", state);
   const res = await fetch(`${httpBase()}/v1/inbox?${q.toString()}`);
-  return (await res.json()).items;
+  if (!res.ok) return [];
+  return (await res.json()).items ?? [];
 }
 
 export async function resolveInboxItem(

@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import shutil
+import shlex
 import subprocess
 import time
 from pathlib import Path
@@ -58,6 +59,7 @@ from ..connectors import (
 )
 from ..connectors.browser_automation import (
     browser_close_session,
+    browser_open_url_session,
     browser_state,
     browser_take_screenshot,
 )
@@ -1226,6 +1228,44 @@ class SessionManager:
 
     def browser_screenshot(self) -> dict[str, Any]:
         return browser_take_screenshot()
+
+    def browser_open_url(self, url: str) -> dict[str, Any]:
+        return browser_open_url_session(url)
+
+    def open_workspace_terminal(self, workspace: str) -> dict[str, Any]:
+        path = str(Path(workspace).expanduser().resolve())
+        if not Path(path).is_dir():
+            return {"ok": False, "error": "workspace directory does not exist"}
+        if os.name == "nt":
+            subprocess.Popen(["powershell.exe", "-NoExit", "-Command", f"Set-Location -LiteralPath '{path.replace(chr(39), chr(39) * 2)}'"])
+        else:
+            subprocess.Popen([os.environ.get("SHELL", "/bin/sh"), "-c", f"cd -- {shlex.quote(path)}; exec $SHELL"])
+        return {"ok": True, "path": path}
+
+    def execute_workspace_command(self, workspace: str, command: str) -> dict[str, Any]:
+        path = str(Path(workspace).expanduser().resolve())
+        if not Path(path).is_dir():
+            return {"ok": False, "error": "workspace directory does not exist"}
+        if not command.strip():
+            return {"ok": True, "output": "", "code": 0}
+        try:
+            if os.name == "nt":
+                completed = subprocess.run(
+                    ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+                    cwd=path, capture_output=True, text=True, timeout=60,
+                    encoding="utf-8", errors="replace",
+                )
+            else:
+                completed = subprocess.run(
+                    [os.environ.get("SHELL", "/bin/sh"), "-lc", command],
+                    cwd=path, capture_output=True, text=True, timeout=60,
+                    encoding="utf-8", errors="replace",
+                )
+            return {"ok": completed.returncode == 0, "output": (completed.stdout + completed.stderr).strip(), "code": completed.returncode}
+        except subprocess.TimeoutExpired as exc:
+            return {"ok": False, "output": ((exc.stdout or "") if isinstance(exc.stdout, str) else "") + "\n命令执行超时", "code": -1}
+        except Exception as exc:
+            return {"ok": False, "output": str(exc), "code": -1}
 
     def browser_close(self) -> dict[str, Any]:
         return browser_close_session()

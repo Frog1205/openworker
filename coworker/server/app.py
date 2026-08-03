@@ -1359,6 +1359,21 @@ def create_app(manager: SessionManager) -> FastAPI:
     def browser_state_get() -> dict[str, Any]:
         return manager.browser_state()
 
+    @app.post("/v1/browser/open")
+    def browser_open_post(body: dict) -> dict[str, Any]:
+        return manager.browser_open_url(str((body or {}).get("url", "")))
+
+    @app.post("/v1/terminal/open")
+    def terminal_open_post(body: dict) -> dict[str, Any]:
+        return manager.open_workspace_terminal(str((body or {}).get("workspace", "")))
+
+    @app.post("/v1/terminal/exec")
+    def terminal_exec_post(body: dict) -> dict[str, Any]:
+        return manager.execute_workspace_command(
+            str((body or {}).get("workspace", "")),
+            str((body or {}).get("command", "")),
+        )
+
     @app.post("/v1/browser/screenshot")
     def browser_screenshot_post() -> dict[str, Any]:
         return manager.browser_screenshot()

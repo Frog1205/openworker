@@ -8,6 +8,7 @@ export type IconName =
   | "sidebarRight"
   | "signOut"
   | "chat"
+  | "globe"
   | "diamond"
   | "book"
   | "search"
@@ -201,6 +202,13 @@ export function Icon({
         <svg {...s}>
           <circle cx="12" cy="12" r="8.3" />
           <path d="M12 7.8V12l2.8 1.7" />
+        </svg>
+      );
+    case "globe":
+      return (
+        <svg {...s}>
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M3.8 12h16.4M12 3.5c2.2 2.3 3.2 5.1 3.2 8.5S14.2 18.2 12 20.5C9.8 18.2 8.8 15.4 8.8 12S9.8 5.8 12 3.5z" />
         </svg>
       );
     case "sliders":
