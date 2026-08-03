@@ -40,10 +40,9 @@ export function InboxConfigure() {
       {/* Unrouted = delivery FAILURES ("messages that never reached you"), so it lives with
           the Inbox now (§28; previously with routing under Connectors, §26). */}
       <div className="mt-6" data-testid="unrouted-section">
-        <h3 className="text-[14px] font-semibold mb-1">Unrouted</h3>
+        <h3 className="text-[14px] font-semibold mb-1">未路由消息</h3>
         <p className="text-[12.5px] text-muted mb-3">
-          Inbound messages and background-turn failures nothing claimed — nothing vanishes
-          silently.
+          无法匹配会话的入站消息和后台任务失败记录都会保留在这里，不会静默丢失。
         </p>
         <UnroutedTable />
       </div>
@@ -123,11 +122,11 @@ function InboxRoutingCard() {
 
   return (
     <div className={CARD + " p-4"} data-testid="inbox-mirror-card">
-      <div className="font-semibold text-[13.5px] mb-1">Unattended approvals</div>
+      <div className="font-semibold text-[13.5px] mb-1">无人值守审批</div>
       <p className="text-[12px] text-muted mb-3">
-        Channel where an Unattended session posts Approve/Deny buttons. Currently mirroring to{" "}
+        无人值守会话发布“批准/拒绝”按钮的频道。当前同步到{" "}
         <strong className="text-ink font-medium" title={target || undefined}>
-          {known ? `#${known}` : target || "in-app Inbox only"}
+          {known ? `#${known}` : target || "仅应用内收件箱"}
         </strong>
         .
       </p>
@@ -141,17 +140,17 @@ function InboxRoutingCard() {
           disabled={!draft.trim() || missingSlackOwner}
           onClick={save}
         >
-          Set
+          设置
         </button>
         {target && (
           <button className="text-[12px] text-danger/80 hover:text-danger" onClick={clear}>
-            clear
+            清除
           </button>
         )}
       </div>
       {missingSlackOwner && (
         <p className="text-[11.5px] text-warnInk mt-2">
-          Choose an approval owner under Integrations → Slack before routing approvals here.
+          请先在连接器 → Slack 中设置审批负责人，再将审批路由到此处。
         </p>
       )}
       {error && <p className="text-[11.5px] text-warnInk mt-2">{error}</p>}
@@ -183,16 +182,16 @@ function DmRouteCard() {
 
   return (
     <div className={CARD + " p-4"}>
-      <div className="font-semibold text-[13.5px] mb-1">Direct messages</div>
+      <div className="font-semibold text-[13.5px] mb-1">私信</div>
       <p className="text-[12px] text-muted mb-3">
-        Session that handles DMs to the bot. With none, DMs park under Unrouted below.
+        负责处理发给机器人的私信的会话。未选择时，私信会进入下方的未路由消息。
       </p>
       <div className="flex items-center gap-2">
         <span className="text-muted shrink-0">
           <Icon name="chat" size={16} />
         </span>
         <select className={"flex-1 " + SELECT} value={dm} onChange={(e) => choose(e.target.value)}>
-          <option value="">No session — park DMs</option>
+          <option value="">无会话 — 暂存私信</option>
           {real.map((s) => (
             <option key={s.session_id} value={s.session_id}>
               {s.title || s.session_id}
@@ -242,8 +241,8 @@ function SubscriptionsCard() {
         <span className="text-muted shrink-0">
           <Icon name="plug" size={15} />
         </span>
-        <span className="font-semibold text-[13.5px]">Channel subscriptions</span>
-        <span className="text-[12px] text-muted">— sessions that listen to a channel (inbound)</span>
+        <span className="font-semibold text-[13.5px]">频道订阅</span>
+        <span className="text-[12px] text-muted">— 监听频道的会话（入站）</span>
       </div>
 
       {subs && subs.length > 0 ? (
@@ -297,7 +296,7 @@ function SubscriptionsCard() {
         </table>
       ) : (
         <div className="px-4 py-3 text-[12.5px] text-muted">
-          No channel subscriptions yet — add one below or ask a coworker to watch a channel.
+          暂无频道订阅 — 可在下方添加，或让协作 Agent 监听频道。
         </div>
       )}
 
@@ -307,7 +306,7 @@ function SubscriptionsCard() {
           value={addSession}
           onChange={(e) => setAddSession(e.target.value)}
         >
-          <option value="">Choose a session…</option>
+          <option value="">选择会话…</option>
           {real.map((s) => (
             <option key={s.session_id} value={s.session_id}>
               {s.title || s.session_id}
@@ -316,7 +315,7 @@ function SubscriptionsCard() {
         </select>
         <ChannelPicker value={addChannel} onChange={setAddChannel} recent={recent} onSubmit={add} />
         <button className={BTN_ACCENT_SM} disabled={!addSession || !addChannel.trim()} onClick={add}>
-          + Subscribe
+          + 订阅
         </button>
       </div>
     </div>
@@ -338,7 +337,7 @@ function UnroutedTable() {
   if (items && items.length === 0)
     return (
       <div className={CARD + " p-4 text-[13px] text-muted"}>
-        Nothing here — no dropped messages or failed turns.
+        暂无内容 — 没有丢弃的消息或失败的任务。
       </div>
     );
 
