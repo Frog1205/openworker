@@ -245,6 +245,13 @@ body {
 /* Equal-flex side regions keep the subtitle centered; they double as window-drag surfaces. */
 .main-topbar-side { align-self: stretch; flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .main-topbar-actions { justify-content: flex-end; }
+.topbar-workspace {
+  display: inline-flex; align-items: center; gap: 6px; max-width: min(280px, 42vw);
+  padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--paper); color: var(--muted); font-size: 12px; font-weight: 500;
+  overflow: hidden; white-space: nowrap;
+}
+.topbar-workspace span { overflow: hidden; text-overflow: ellipsis; }
 .topbar-icon-btn {
   width: 30px; height: 30px; display: grid; place-items: center;
   border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer;
