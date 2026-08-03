@@ -5,7 +5,6 @@ import { getSettings, inspectPdf, sessionSkills, type SessionSkillRow } from "..
 import { formatTokens, totalTokens } from "../usage";
 import { Dropdown, type Option } from "./Dropdown";
 import { Icon } from "./Icon";
-import { Toggle } from "./Toggle";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { useI18n } from "../I18nProvider";
 import {
@@ -601,8 +600,6 @@ export function Composer(props: Props) {
               <ModeMenu
                 mode={props.mode}
                 onModeChange={props.onModeChange}
-                unattended={props.unattended}
-                onUnattendedChange={props.onUnattendedChange}
               />
             </div>
           ) : null}
@@ -862,13 +859,9 @@ function UsageChip({
 function ModeMenu({
   mode,
   onModeChange,
-  unattended,
-  onUnattendedChange,
 }: {
   mode: string;
   onModeChange: (mode: string) => void;
-  unattended?: boolean;
-  onUnattendedChange?: (on: boolean) => void;
 }) {
   const { t, locale } = useI18n();
   const zh = locale === "zh-CN";
@@ -876,6 +869,8 @@ function ModeMenu({
     { value: "discuss", label: t("permission.discuss.label"), description: t("permission.discuss.description") },
     { value: "interactive", label: t("permission.interactive.label"), description: t("permission.interactive.description") },
     { value: "auto", label: t("permission.auto.label"), description: t("permission.auto.description") },
+    { value: "full", label: t("permission.full.label"), description: t("permission.full.description") },
+    { value: "custom", label: t("permission.custom.label"), description: t("permission.custom.description") },
   ];
   const [open, setOpen] = useState(false);
   const current = permissionOptions.find((o) => o.value === mode);
@@ -890,10 +885,7 @@ function ModeMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={zh ? "执行权限" : "Mode"}
-        title={
-          `${zh ? "执行权限" : "Mode"}: ${current?.label || mode}` +
-          (unattended ? (zh ? " · 确认请求将发送到收件箱" : " · approvals go to the Inbox") : "")
-        }
+        title={`${zh ? "执行权限" : "Mode"}: ${current?.label || mode}`}
       >
         {current?.label || mode}
         <Icon name="chevronDown" size={11} className="text-faint" />
@@ -926,24 +918,6 @@ function ModeMenu({
                 <span className="text-[11px] text-faint leading-snug">{o.description}</span>
               </button>
             ))}
-            {onUnattendedChange && (
-              <>
-                <div className="my-1 border-t border-line" />
-                <div className="flex items-center gap-2 px-2.5 py-1.5">
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] text-ink">{t("composer.inboxApprovals")}</span>
-                    <span className="block text-[11px] text-faint leading-snug">
-                      {t("composer.inboxApprovalsHint")}
-                    </span>
-                  </span>
-                  <Toggle
-                    checked={!!unattended}
-                    onChange={onUnattendedChange}
-                    title={t("composer.inboxApprovalsTitle")}
-                  />
-                </div>
-              </>
-            )}
           </div>
         </>
       )}
