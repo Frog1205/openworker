@@ -152,27 +152,6 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
               <Icon name="folder" size={22} />
               {path ? <span className="max-w-full truncate px-4 text-ink">{path}</span> : <span>{zh ? "添加 Atlas 可读取和编辑的文件夹" : "Add a folder Atlas can read and edit"}</span>}
             </button>
-            <div className="flex gap-1.5">
-              <input
-                value={path}
-                onChange={(event) => setPath(event.target.value)}
-                onKeyDown={(event) => event.key === "Enter" && void choose(path, true)}
-                placeholder={zh ? "输入文件夹路径" : "Folder path"}
-                className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2.5 py-2 text-[12px] outline-none focus:border-accent"
-              />
-              <button
-                type="button"
-                className="rounded-lg border border-line px-2 text-[12px] cursor-pointer hover:bg-paper"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  void browse();
-                }}
-                aria-busy={browsing}
-              >
-                {zh ? "浏览" : "Browse"}
-              </button>
-            </div>
             {error && <div className="px-1 pt-2 text-[12px] text-danger">{error}</div>}
             <button
               type="button"
