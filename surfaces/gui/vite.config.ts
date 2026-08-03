@@ -17,7 +17,7 @@ export default defineConfig(({ command }) => {
       ? "com.atlas.enterprise"
       : product
         ? "com.atlas.creator"
-        : "coworker";
+      : "com.atlas.creator";
     const state =
       process.env.COWORKER_STATE_DIR ||
       (process.platform === "win32"
