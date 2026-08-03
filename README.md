@@ -157,6 +157,11 @@ npm run build
 - [`docs/adr/ADR-003-product-manifest.md`](docs/adr/ADR-003-product-manifest.md)
 - [`docs/security/threat-model.md`](docs/security/threat-model.md)
 
+## Contributors
+
+- [Frog1205](https://github.com/Frog1205) — Atlas 产品方向、架构改造、体验设计与项目维护。
+- Codex — 协助完成 Atlas 的工程实现、界面本地化、测试与发布协作。
+
 ## Upstream 与许可证
 
 Atlas 基于 [andrewyng/openworker](https://github.com/andrewyng/openworker) 改造，并继续使用其基于 [aisuite](https://github.com/andrewyng/aisuite) 的 Agent Runtime 能力。感谢 OpenWorker、aisuite 及其贡献者。
