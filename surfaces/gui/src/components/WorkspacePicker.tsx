@@ -59,9 +59,6 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
       const picked = await chooseFolder();
       if (picked) {
         setPath(picked);
-        if (creating) void choose(picked, true);
-      } else {
-        setError(zh ? "无法打开目录选择器，请手动输入路径" : "The folder picker is unavailable; enter a path manually.");
       }
     } finally {
       setBrowsing(false);
