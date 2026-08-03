@@ -100,6 +100,7 @@ export function Composer(props: Props) {
     : "";
   const [text, setText] = useState("");
   const [workspacePickerOpen, setWorkspacePickerOpen] = useState(false);
+  const workspaceButtonRef = useRef<HTMLButtonElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // "/" force-run (SKILLS-SPEC §4.1 #3). The popup derives from the draft: it is open while
   // the text is a bare "/query" (no whitespace yet) and no skill is picked. Selecting a row
@@ -584,6 +585,7 @@ export function Composer(props: Props) {
               {props.workspacePickerEnabled && (
                 <button
                   type="button"
+                  ref={workspaceButtonRef}
                   className="chip flex items-center gap-1.5 max-w-[180px] px-2 py-1 rounded-lg text-[12px] text-muted hover:text-ink hover:bg-paper"
                   title={props.workspace || (zh ? "选择项目空间" : "Choose project workspace")}
                   aria-label={zh ? "选择项目空间" : "Choose project workspace"}
@@ -708,6 +710,7 @@ export function Composer(props: Props) {
           onChoose={props.onWorkspaceChange}
           onClear={props.onWorkspaceClear}
           onClose={() => setWorkspacePickerOpen(false)}
+          anchorRef={workspaceButtonRef}
         />
       )}
     </div>

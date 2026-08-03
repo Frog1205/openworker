@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { getRecentWorkspaces, openWorkspace, type RecentWorkspace } from "../api";
 import { chooseFolder } from "../tauri";
 import { useI18n } from "../I18nProvider";
@@ -9,15 +10,30 @@ interface Props {
   onChoose: (path: string, branch?: string | null) => void;
   onClear: () => void;
   onClose: () => void;
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
-export function WorkspacePicker({ current, onChoose, onClear, onClose }: Props) {
+export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef }: Props) {
   const { locale } = useI18n();
   const zh = locale === "zh-CN";
   const [recents, setRecents] = useState<RecentWorkspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [path, setPath] = useState("");
   const [error, setError] = useState("");
+  const [position, setPosition] = useState({ left: 8, top: 8 });
+
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(310, Math.max(220, document.documentElement.clientWidth - 24));
+      const left = Math.max(8, Math.min(rect.left, document.documentElement.clientWidth - width - 8));
+      setPosition({ left, top: Math.max(8, rect.top - 8) });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [anchorRef]);
 
   useEffect(() => {
     getRecentWorkspaces().then(setRecents).catch(() => setRecents([]));
@@ -42,11 +58,12 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose }: Props) 
     }
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[100]" onClick={onClose} aria-hidden="true" />
       <div
-        className="absolute z-50 bottom-full left-0 mb-2 w-[310px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-line bg-panel shadow-2xl p-2"
+        className="fixed z-[101] w-[310px] max-w-[calc(100vw-1.5rem)] -translate-y-full rounded-2xl border border-line bg-panel shadow-2xl p-2"
+        style={{ left: position.left, top: position.top }}
         role="menu"
         aria-label={zh ? "选择项目空间" : "Choose project workspace"}
       >
@@ -145,6 +162,7 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose }: Props) 
           </div>
         )}
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
