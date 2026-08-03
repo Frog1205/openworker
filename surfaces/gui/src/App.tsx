@@ -1458,7 +1458,7 @@ export function App() {
                 </button>
               </div>
             )}
-            {agent !== "chat" && (workspace || mainWorkspace) && (
+            {!idle && agent !== "chat" && (workspace || mainWorkspace) && (
               <button ref={workspaceTopButtonRef} className="topbar-workspace" title={workspace || mainWorkspace || ""} onClick={() => setWorkspaceTopPickerOpen(true)}>
                 <Icon name="folder" size={14} />
                 <span>{baseName(workspace || mainWorkspace || "")}</span>
@@ -1651,7 +1651,7 @@ export function App() {
               sessionId={sessionId}
               workspace={needsWorkspace(agent) ? workspace || mainWorkspace || "" : undefined}
               workspacePickerEnabled={agent !== "chat"}
-              showWorkspacePicker={false}
+              showWorkspacePicker={idle}
               onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
               onWorkspaceClear={agent !== "chat" ? clearWorkspace : undefined}
               unattended={unattended}
