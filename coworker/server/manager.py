@@ -1853,7 +1853,6 @@ class SessionManager:
     def test_custom_model(self, model: str, protocol: str, base_url: str, api_key: str) -> dict[str, Any]:
         """Probe a custom relay without persisting its credentials or model entry."""
         from ..providers.anthropic_provider import AnthropicProvider
-        from ..providers.openai_provider import OpenAIProvider
 
         target = str(model or "").strip()
         scheme = str(protocol or "openai").strip().lower()
@@ -1870,8 +1869,23 @@ class SessionManager:
                 provider = AnthropicProvider(api_key=key, base_url=endpoint, thinking_budget=0)
                 turn = provider.complete(model=target, messages=[{"role": "user", "content": "Reply with OK only."}], max_tokens=16)
             else:
-                provider = OpenAIProvider(api_key=key, base_url=endpoint)
-                turn = provider.complete(model=target, messages=[{"role": "user", "content": "Reply with OK only."}], max_tokens=16, temperature=0)
+                # Use the documented Chat Completions route explicitly for relays such as
+                # GPTGod; this avoids SDK base-url joining differences across openai versions.
+                import httpx
+
+                url = endpoint + "/chat/completions"
+                response = httpx.post(
+                    url,
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json={"model": target, "messages": [{"role": "user", "content": "Reply with OK only."}], "max_tokens": 16, "stream": False},
+                    timeout=30.0,
+                )
+                if response.status_code >= 400:
+                    detail = response.text.strip()[:500] or response.reason_phrase
+                    return {"ok": False, "error": f"上游 HTTP {response.status_code}: {detail}"}
+                data = response.json()
+                preview = str((((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "")).strip()[:80]
+                return {"ok": True, "message": "连接成功", "preview": preview}
             return {"ok": True, "message": "连接成功", "preview": (turn.text or "").strip()[:80]}
         except Exception as exc:
             detail = str(exc)
