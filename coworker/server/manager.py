@@ -444,7 +444,7 @@ class SessionManager:
             model=model,
             mode=mode,
             provider=self.provider,
-            memory_store=self.memory_store,
+            memory_store=(self.memory_store if self._prefs.get("memory_enabled", True) else None),
             messages=messages,
             extra_tools=extra_tools,
             secrets=self.secrets,
@@ -2739,7 +2739,7 @@ class SessionManager:
             mode=Mode.INTERACTIVE,
             approver=self._scheduled_approver(task, session_id),
             provider=self.provider,
-            memory_store=self.memory_store,
+            memory_store=(self.memory_store if self._prefs.get("memory_enabled", True) else None),
             user_instructions=str(self._prefs.get("personalization_prompt") or ""),
             secrets=self.secrets,
             # No scheduling tools inside a scheduled run: the executing agent's job is to DO the
