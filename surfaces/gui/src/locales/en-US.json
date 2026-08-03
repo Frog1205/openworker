@@ -158,6 +158,8 @@
   "settings.models.custom.vendor": "Model vendor",
   "settings.models.custom.vendorDefault": "Custom vendor",
   "settings.models.custom.model": "Upstream model name",
+  "settings.models.custom.protocol": "API protocol",
+  "settings.models.custom.endpoint": "Relay endpoint",
   "settings.models.custom.key": "API key",
   "settings.models.custom.save": "Save and add",
   "settings.models.custom.saving": "Saving…",

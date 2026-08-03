@@ -97,6 +97,8 @@
   "settings.models.custom.vendor": "模型厂商名称",
   "settings.models.custom.vendorDefault": "自定义厂商",
   "settings.models.custom.model": "上游模型名称",
+  "settings.models.custom.protocol": "接口协议",
+  "settings.models.custom.endpoint": "中转接口地址",
   "settings.models.custom.key": "API 密钥",
   "settings.models.custom.save": "保存并添加",
   "settings.models.custom.saving": "保存中…",
