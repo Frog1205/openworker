@@ -1080,6 +1080,16 @@ export function App() {
     setSessionId(newId());
     getRecentWorkspaces().then(setProjects).catch(() => {});
   };
+  const clearWorkspace = () => {
+    setWorkspace(null);
+    setBranch(null);
+    setItems([]);
+    setUsage(emptyUsage());
+    setStreaming("");
+    setTodo([]);
+    setRunning(false);
+    setSessionId(newId());
+  };
   // "New project" lives under a project-scoped persona's accordion. Switch to that persona, start a
   // fresh session with no folder yet, and open the gate in create mode — so the gate's
   // surface==="session" && gatesWorkspace(agent) guard passes even if the active session was Chat/Cowork.
@@ -1620,6 +1630,7 @@ export function App() {
               workspace={needsWorkspace(agent) ? workspace || "" : undefined}
               workspacePickerEnabled={agent !== "chat"}
               onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
+              onWorkspaceClear={agent !== "chat" ? clearWorkspace : undefined}
               unattended={unattended}
               onUnattendedChange={agent !== "chat" ? toggleUnattended : undefined}
               prefill={composerPrefill}

@@ -22,6 +22,7 @@ describe("Composer project workspace", () => {
         workspace="D:\\projects\\atlas"
         workspacePickerEnabled
         onWorkspaceChange={vi.fn()}
+        onWorkspaceClear={vi.fn()}
         onSend={vi.fn()}
         onInterrupt={vi.fn()}
         onModeChange={vi.fn()}
@@ -30,8 +31,9 @@ describe("Composer project workspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Choose project workspace" }));
-    expect(await screen.findByRole("heading", { name: "Choose a project folder" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("heading", { name: "Choose a project folder" })).toBeNull();
+    expect(await screen.findByRole("menu", { name: "Choose project workspace" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /New project/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitem", { name: /Don't work in a project/ }));
+    expect(screen.queryByRole("menu", { name: "Choose project workspace" })).toBeNull();
   });
 });
