@@ -1671,6 +1671,8 @@ class SessionManager:
 
     def _model_provider(self, model: str) -> str:
         """The provider a model string routes to (known `prefix:` or the OpenAI default)."""
+        if (model or "").startswith("custom:"):
+            return "custom"
         if ":" in (model or ""):
             prefix = model.split(":", 1)[0]
             if get_descriptor(prefix) is not None:
@@ -1678,6 +1680,12 @@ class SessionManager:
         return "openai"
 
     def _provider_configured(self, name: str) -> bool:
+        if name == "custom":
+            return any(
+                bool(self.secrets.get(f"custom-model:{x.get('slug')}"))
+                for x in (self._prefs.get("custom_models") or [])
+                if isinstance(x, dict)
+            )
         d = get_descriptor(name)
         if d is None:
             return False
@@ -1796,6 +1804,43 @@ class SessionManager:
         self._save_prefs()
         return {"ok": True, **self.get_settings()}
 
+    def add_custom_model(
+        self, name: str, model: str, protocol: str, base_url: str, api_key: str
+    ) -> dict[str, Any]:
+        """Register a model backed by a user-supplied OpenAI- or Claude-compatible relay."""
+        import re
+
+        label = str(name or model or "").strip()
+        target = str(model or "").strip()
+        scheme = str(protocol or "openai").strip().lower()
+        endpoint = str(base_url or "").strip().rstrip("/")
+        key = str(api_key or "").strip()
+        if not label or not target or scheme not in {"openai", "claude"} or not endpoint or not key:
+            return {"ok": False, "error": "name, model, protocol, endpoint and api_key are required"}
+        slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", label.lower()).strip("-") or "model"
+        existing = {str(x.get("slug")) for x in (self._prefs.get("custom_models") or []) if isinstance(x, dict)}
+        base = slug
+        n = 2
+        while slug in existing:
+            slug = f"{base}-{n}"
+            n += 1
+        self.secrets.put(f"custom-model:{slug}", {"model": target, "protocol": scheme, "base_url": endpoint, "api_key": key})
+        custom = self._prefs.setdefault("custom_models", [])
+        custom.append({"slug": slug, "name": label, "model": target, "protocol": scheme, "base_url": endpoint})
+        self._prefs.setdefault("models", []).append(f"custom:{slug}")
+        self._save_prefs()
+        return {"ok": True, **self.get_settings()}
+
+    def remove_custom_model(self, slug: str) -> dict[str, Any]:
+        slug = str(slug or "").strip()
+        self._prefs["custom_models"] = [x for x in (self._prefs.get("custom_models") or []) if str(x.get("slug")) != slug]
+        self._prefs["models"] = [m for m in (self._prefs.get("models") or []) if m != f"custom:{slug}"]
+        self.secrets.delete(f"custom-model:{slug}")
+        if self.model == f"custom:{slug}":
+            self.set_default_model("gpt-5.6-sol")
+        self._save_prefs()
+        return {"ok": True, **self.get_settings()}
+
     def remove_model(self, model: str) -> dict[str, Any]:
         """Remove a model id from the picker. Custom ids are dropped; matrix models are
         hidden by id (the matrix is derived, not stored, so a bare drop would resurrect
@@ -1834,13 +1879,16 @@ class SessionManager:
             selectable.insert(0, self.model)
         from ..providers.matrix import model_context_windows, model_labels
 
+        labels = model_labels()
+        labels.update({f"custom:{x.get('slug')}": str(x.get("name") or x.get("model") or x.get("slug")) for x in (self._prefs.get("custom_models") or []) if isinstance(x, dict)})
         return {
             "provider": "openai",
             "model": self.model,
             "models": selectable,
             # Curated-matrix display names ({full id → "GLM-5.2 · via Together"}) so every
             # picker shows human labels; custom models absent here render their raw id.
-            "model_labels": model_labels(),
+            "model_labels": labels,
+            "custom_models": [x for x in (self._prefs.get("custom_models") or []) if isinstance(x, dict)],
             # {full id → context window in tokens}, verified matrix entries only —
             # drives the composer's context-fill meter (absent id → meter hides).
             "model_context_windows": model_context_windows(),
