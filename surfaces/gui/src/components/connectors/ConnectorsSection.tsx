@@ -19,6 +19,8 @@ import { GmailDetail } from "./GmailDetail";
 import { HubSpotDetail } from "./HubSpotDetail";
 import { SlackDetail } from "./SlackDetail";
 import { GRP } from "./ui";
+import { useI18n } from "../../I18nProvider";
+import { connectorTitle } from "../../connectors/locale";
 
 // Connectors surface = LIST ⇄ per-connector DETAIL SUBPAGE (UX-DECISIONS §21). The
 // Integrations sub-nav never grows per-connector items; detail pages live behind a
@@ -50,6 +52,8 @@ const DETAIL_PAGES: Record<string, (p: DetailProps) => JSX.Element> = {
 };
 
 export function ConnectorsSection() {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   const [detail, setDetail] = useState<string | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [cloud, setCloud] = useState<CloudStatus | null>(null);
@@ -78,10 +82,10 @@ export function ConnectorsSection() {
           data-testid="connectors-breadcrumb"
           onClick={() => setDetail(null)}
         >
-          ‹ Connectors
+          ‹ {zh ? "连接器" : "Connectors"}
         </button>
         {!c ? (
-          <div className="text-[13px] text-muted">Loading…</div>
+          <div className="text-[13px] text-muted">{zh ? "正在加载…" : "Loading…"}</div>
         ) : !c.connected ? (
           /* Pre-connect page (§38). When a connect completes, the poll flips
              c.connected and this same route re-renders as the connected page. */
@@ -122,15 +126,17 @@ function GenericDetail({
   onChanged,
   onGone,
 }: DetailProps & { onGone: () => void }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
   return (
     <div>
       <div className="flex items-center gap-3.5 mb-5">
-        <ConnectorBadge connector={c} size={44} title={c.title} />
+        <ConnectorBadge connector={c} size={44} title={connectorTitle(c, locale)} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-[20px] font-semibold tracking-tight leading-tight">{c.title}</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight leading-tight">{connectorTitle(c, locale)}</h2>
           <div className="text-[12.5px] text-muted flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-ok" />
-            {c.account || (c.auth === "none" ? "Built in" : "Connected")}
+            {c.account || (c.auth === "none" ? (zh ? "内置能力" : "Built in") : (zh ? "已连接" : "Connected"))}
           </div>
         </div>
         {c.auth !== "none" && (
@@ -142,7 +148,7 @@ function GenericDetail({
               onGone();
             }}
           >
-            Disconnect
+            {zh ? "断开连接" : "Disconnect"}
           </button>
         )}
       </div>

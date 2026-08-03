@@ -11,6 +11,8 @@ import { ConnectorBadge } from "../../connectors/ConnectorIcon";
 import { ConnectSetup } from "../ManageTabs";
 import { CloudSignInInline, CloudStatusPending } from "./CloudSignIn";
 import { PILL_ACCENT, PILL_LINE, TAG_ACCENT } from "./ui";
+import { useI18n } from "../../I18nProvider";
+import { connectorTitle } from "../../connectors/locale";
 
 // The ONE place a connection gets added (UX-DECISIONS §21): the detail page's header
 // button (or the list's Connect pill) opens this sheet. Connectors with two connect
@@ -33,6 +35,9 @@ export function AddConnectionModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
+  const displayTitle = connectorTitle(c, locale);
   // MCP-backed one-click (§42): local OAuth against the vendor's hosted MCP server —
   // with manual fields alongside (jira, asana) it's a second mode; alone (monday)
   // it IS the connect flow.
@@ -58,14 +63,14 @@ export function AddConnectionModal({
       <div
         className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[480px] max-w-[calc(100vw-2rem)] bg-panel rounded-2xl border border-line shadow-2xl"
         role="dialog"
-        aria-label={title || `Connect ${c.title}`}
+        aria-label={title || (zh ? `连接 ${displayTitle}` : `Connect ${displayTitle}`)}
       >
         <div className="flex items-center gap-3 px-5 pt-5">
-          <ConnectorBadge connector={c} size={34} title={c.title} />
+          <ConnectorBadge connector={c} size={34} title={displayTitle} />
           <div className="flex-1 font-semibold text-[16px] tracking-tight">
-            {title || `Connect ${c.title}`}
+            {title || (zh ? `连接 ${displayTitle}` : `Connect ${displayTitle}`)}
           </div>
-          <button className="text-faint hover:text-ink text-[18px] leading-none" onClick={onClose} title="Close">
+          <button className="text-faint hover:text-ink text-[18px] leading-none" onClick={onClose} title={zh ? "关闭" : "Close"}>
             ×
           </button>
         </div>
@@ -84,7 +89,7 @@ export function AddConnectionModal({
                     }
                     onClick={() => setPane(p)}
                   >
-                    {p === "one" ? "One click" : "Manual"}
+                    {p === "one" ? (zh ? "快捷连接" : "One click") : (zh ? "手动配置" : "Manual")}
                   </button>
                 ))}
               </div>
