@@ -184,7 +184,15 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState("");
   const [error, setError] = useState("");
+  const validate = () => {
+    if (!name || !vendor || !model || !baseUrl || !apiKey) {
+      setError(t("settings.models.custom.required"));
+      return false;
+    }
+    return true;
+  };
   const save = async () => {
+    if (!validate()) return;
     setSaving(true); setError("");
     const r = await addCustomModel({ name, vendor, model, protocol, base_url: baseUrl, api_key: apiKey }).catch(() => ({ ok: false, error: "network" }));
     setSaving(false);
@@ -192,6 +200,7 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
     setName(""); setVendor(""); setModel(""); setBaseUrl(""); setApiKey(""); setOpen(false); onChanged();
   };
   const test = async () => {
+    if (!model || !baseUrl || !apiKey) { setError(t("settings.models.custom.testRequired")); return; }
     setTesting(true); setTestResult("");
     const r: { ok: boolean; error?: string; preview?: string } = await testCustomModel({ model, protocol, base_url: baseUrl, api_key: apiKey }).catch(() => ({ ok: false, error: "network" }));
     setTesting(false); setTestResult(r.ok ? `${t("settings.models.custom.testOk")}${r.preview ? ` · ${r.preview}` : ""}` : `${t("settings.models.custom.testFailed")}: ${r.error || "unknown"}`);
@@ -211,8 +220,8 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
       <label className="grid gap-1 text-[12px] text-muted"><span>{t("settings.models.custom.key")}</span><input className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-[13px]" type="password" placeholder="sk-…" value={apiKey} onChange={(e) => setApiKey(e.target.value)} /></label>
       {error && <div className="text-[12px] text-danger sm:col-span-2">{error}</div>}
       {testResult && <div className={`text-[12px] sm:col-span-2 ${testResult.startsWith(t("settings.models.custom.testOk")) ? "text-ok" : "text-danger"}`}>{testResult}</div>}
-      <button className={BTN_BORDERED} disabled={testing || !model || !baseUrl || !apiKey} onClick={test}>{testing ? t("settings.models.custom.testing") : t("settings.models.custom.test")}</button>
-      <button className={`${BTN_ACCENT} sm:col-span-2`} disabled={saving || !name || !model || !baseUrl || !apiKey} onClick={save}>{saving ? t("settings.models.custom.saving") : t("settings.models.custom.save")}</button>
+      <button className={BTN_BORDERED} disabled={testing} onClick={test}>{testing ? t("settings.models.custom.testing") : t("settings.models.custom.test")}</button>
+      <button className={`${BTN_ACCENT} sm:col-span-2`} disabled={saving} onClick={save}>{saving ? t("settings.models.custom.saving") : t("settings.models.custom.save")}</button>
     </div>}
   </div>;
 }
