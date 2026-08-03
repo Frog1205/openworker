@@ -169,6 +169,8 @@
   "settings.models.custom.testing": "Testing…",
   "settings.models.custom.testOk": "Connection succeeded",
   "settings.models.custom.testFailed": "Connection failed",
+  "settings.models.custom.required": "Fill in the display name, vendor, model, endpoint, and API key",
+  "settings.models.custom.testRequired": "Fill in the upstream model, endpoint, and API key first",
   "settings.tokenSavings": "Token optimization",
   "settings.tokenSavings.help": "PDF attachments travel with every turn, so large documents continually increase token usage.",
   "settings.pdfFallback": "When a model cannot read PDF natively",
