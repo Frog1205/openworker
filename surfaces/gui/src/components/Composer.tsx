@@ -868,8 +868,7 @@ function ModeMenu({
   const permissionOptions: Option[] = [
     { value: "discuss", label: t("permission.discuss.label"), description: t("permission.discuss.description") },
     { value: "interactive", label: t("permission.interactive.label"), description: t("permission.interactive.description") },
-    { value: "auto", label: t("permission.auto.label"), description: t("permission.auto.description") },
-    { value: "full", label: t("permission.full.label"), description: t("permission.full.description") },
+    { value: "auto", label: t("permission.full.label"), description: t("permission.full.description") },
     { value: "custom", label: t("permission.custom.label"), description: t("permission.custom.description") },
   ];
   const [open, setOpen] = useState(false);
