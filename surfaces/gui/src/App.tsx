@@ -1618,6 +1618,8 @@ export function App() {
               onModelChange={changeModel}
               sessionId={sessionId}
               workspace={needsWorkspace(agent) ? workspace || "" : undefined}
+              workspacePickerEnabled={agent !== "chat"}
+              onWorkspaceChange={agent !== "chat" ? chooseWorkspace : undefined}
               unattended={unattended}
               onUnattendedChange={agent !== "chat" ? toggleUnattended : undefined}
               prefill={composerPrefill}

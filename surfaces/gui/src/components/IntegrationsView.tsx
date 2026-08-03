@@ -3,6 +3,7 @@ import { getConnectors } from "../api";
 import { McpTab } from "./ManageTabs";
 import { ConnectorsSection } from "./connectors/ConnectorsSection";
 import { Icon } from "./Icon";
+import { useI18n } from "../I18nProvider";
 
 // The Connectors surface (renamed from "Integrations", §26) keeps the left sub-nav, now just
 // Connectors · MCP. The old "Messaging routing" tab (and its ⚠ unrouted badge) moved whole to
@@ -13,12 +14,13 @@ type IntTab = "connectors" | "mcp";
 
 // Fixed sub-nav (UX-DECISIONS §21): connector detail lives as a SUBPAGE under
 // Connectors, never as a nav item — the nav must not grow per connector.
-const INT_TABS: { key: IntTab; label: string; icon: "plug" | "code" }[] = [
-  { key: "connectors", label: "Connectors", icon: "plug" },
-  { key: "mcp", label: "MCP servers", icon: "code" },
-];
-
 export function IntegrationsView() {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
+  const tabs: { key: IntTab; label: string; icon: "plug" | "code" }[] = [
+    { key: "connectors", label: zh ? "连接器" : "Connectors", icon: "plug" },
+    { key: "mcp", label: zh ? "MCP 服务器" : "MCP servers", icon: "code" },
+  ];
   const [tab, setTab] = useState<IntTab>("connectors");
   // Sub-nav count: how many connectors exist. Polled so the badge stays live.
   const [connCount, setConnCount] = useState<number | null>(null);
@@ -36,9 +38,9 @@ export function IntegrationsView() {
     <main className="flex-1 min-w-0 flex bg-paper">
       <nav className="page-subnav w-[208px] shrink-0 border-r border-line bg-panel/40 px-3 py-4">
         <div className="px-2 text-[13.5px] font-semibold mb-3 flex items-center gap-2">
-          <Icon name="plug" size={16} /> Connectors
+          <Icon name="plug" size={16} /> {zh ? "连接器" : "Connectors"}
         </div>
-        {INT_TABS.map((t) => {
+        {tabs.map((t) => {
           const active = tab === t.key;
           return (
             <button
@@ -69,16 +71,16 @@ export function IntegrationsView() {
           {tab === "connectors" ? (
             <section>
               <PanelHead
-                title="Connectors"
-                sub="Apps and tools your coworkers can use. Connected ones come first."
+                title={zh ? "连接器" : "Connectors"}
+                sub={zh ? "连接应用与工具，让 Atlas 在授权范围内获取上下文并完成任务；已连接的服务会优先显示。" : "Apps and tools Atlas can use. Connected ones come first."}
               />
               <ConnectorsSection />
             </section>
           ) : (
             <section>
               <PanelHead
-                title="MCP servers"
-                sub="External tool servers (stdio or HTTP), shared across all agents."
+                title={zh ? "MCP 服务器" : "MCP servers"}
+                sub={zh ? "管理通过 stdio 或 HTTP 接入的外部工具服务，供所有 Agent 共用。" : "External tool servers (stdio or HTTP), shared across all agents."}
               />
               <McpTab />
             </section>

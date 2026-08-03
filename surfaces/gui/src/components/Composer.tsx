@@ -6,6 +6,7 @@ import { formatTokens, totalTokens } from "../usage";
 import { Dropdown, type Option } from "./Dropdown";
 import { Icon } from "./Icon";
 import { Toggle } from "./Toggle";
+import { FolderGate } from "./FolderGate";
 import { useI18n } from "../I18nProvider";
 import {
   cancelDictation,
@@ -64,6 +65,10 @@ interface Props {
   // When set (Code/Cowork), the Mode menu is shown. The folder/roots + branch controls left the
   // composer for the Session settings drawer (§22) — folder access is standing session config.
   workspace?: string;
+  // Opens the project-space picker. The selected folder is standing context for the
+  // task, matching Codex's explicit workspace control rather than hiding it in setup.
+  workspacePickerEnabled?: boolean;
+  onWorkspaceChange?: (path: string, branch?: string | null) => void;
   // Unattended / send-approvals-to-Inbox — folded into the Mode menu (§22): "who approves, and
   // when" is one mental model. Absent handler = no toggle (e.g. Chat).
   unattended?: boolean;
@@ -87,8 +92,13 @@ interface Props {
 }
 
 export function Composer(props: Props) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  const zh = locale === "zh-CN";
+  const workspaceName = props.workspace
+    ? props.workspace.split(/[\\/]/).filter(Boolean).pop() || props.workspace
+    : "";
   const [text, setText] = useState("");
+  const [workspacePickerOpen, setWorkspacePickerOpen] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // "/" force-run (SKILLS-SPEC §4.1 #3). The popup derives from the draft: it is open while
   // the text is a bare "/query" (no whitespace yet) and no skill is picked. Selecting a row
@@ -569,12 +579,29 @@ export function Composer(props: Props) {
               <span className="text-[12px] text-muted tabular-nums">{recordingTime}</span>
             </div>
           ) : props.workspace !== undefined ? (
-            <ModeMenu
-              mode={props.mode}
-              onModeChange={props.onModeChange}
-              unattended={props.unattended}
-              onUnattendedChange={props.onUnattendedChange}
-            />
+            <div className="flex items-center gap-1 min-w-0">
+              {props.workspacePickerEnabled && (
+                <button
+                  type="button"
+                  className="chip flex items-center gap-1.5 max-w-[180px] px-2 py-1 rounded-lg text-[12px] text-muted hover:text-ink hover:bg-paper"
+                  title={props.workspace || (zh ? "选择项目空间" : "Choose project workspace")}
+                  aria-label={zh ? "选择项目空间" : "Choose project workspace"}
+                  onClick={() => {
+                    setWorkspacePickerOpen(true);
+                  }}
+                >
+                  <Icon name="folder" size={14} />
+                  <span className="truncate">{workspaceName || (zh ? "选择项目空间" : "Choose workspace")}</span>
+                  <Icon name="chevronDown" size={11} />
+                </button>
+              )}
+              <ModeMenu
+                mode={props.mode}
+                onModeChange={props.onModeChange}
+                unattended={props.unattended}
+                onUnattendedChange={props.onUnattendedChange}
+              />
+            </div>
           ) : null}
 
           {dictationBusy === "Transcribing…" && <span className="text-[11.5px] text-accent">Transcribing…</span>}
@@ -674,6 +701,15 @@ export function Composer(props: Props) {
       <span className="sr-only" role="status" aria-live="polite">
         {dictation?.recording ? `Listening, ${recordingTime}` : dictationBusy || ""}
       </span>
+      {workspacePickerOpen && props.onWorkspaceChange && (
+        <FolderGate
+          onChoose={(path, selectedBranch) => {
+            setWorkspacePickerOpen(false);
+            props.onWorkspaceChange?.(path, selectedBranch);
+          }}
+          onCancel={() => setWorkspacePickerOpen(false)}
+        />
+      )}
     </div>
   );
 }
