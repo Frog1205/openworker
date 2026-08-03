@@ -1414,6 +1414,15 @@ export async function getSettings(): Promise<ModelSettings> {
   return res.json();
 }
 
+export async function setPersonalization(prompt: string, memoryEnabled: boolean) {
+  const res = await fetch(`${httpBase()}/v1/settings/personalization`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, memory_enabled: memoryEnabled }),
+  });
+  return res.json() as Promise<{ ok: boolean; personalization_prompt: string; memory_enabled: boolean }>;
+}
+
 export async function setModelKey(
   apiKey: string,
 ): Promise<{ ok: boolean; error?: string; has_key?: boolean; source?: string }> {

@@ -5,6 +5,7 @@ import {
   setCompactionSettings,
   setContextBar,
   setOnboarded,
+  setPersonalization,
   setPdfSettings,
   setScratchBase,
   setSessionsPeek,
@@ -53,7 +54,7 @@ import type { MessageKey } from "../i18n";
 // Models + Personas host the existing tab components inside the page shell (field re-skin to follow).
 // "appearance" is the General tab's stable key — callers deep-link with it, so the
 // rename (UX-021) changed only the label. "files" folded into General as a card.
-type SetTab = "appearance" | "models" | "skills" | "voice" | "personas";
+type SetTab = "appearance" | "personalization" | "models" | "skills" | "voice" | "personas";
 
 const CARD = "rounded-xl2 border border-line bg-panel";
 const FIELD_LABEL = "text-[12.5px] font-medium text-ink";
@@ -66,6 +67,7 @@ const BTN_BORDERED =
 
 const SET_TABS: { key: SetTab; labelKey: MessageKey; icon: "sliders" | "code" | "mic" | "sparkle" | "book" }[] = [
   { key: "appearance", labelKey: "settings.general", icon: "sliders" },
+  { key: "personalization", labelKey: "settings.personalization", icon: "sparkle" },
   { key: "models", labelKey: "settings.models", icon: "code" },
   { key: "skills", labelKey: "settings.skills", icon: "book" },
   { key: "voice", labelKey: "settings.voice", icon: "mic" },
@@ -119,6 +121,8 @@ export function SettingsView({
         <div className="max-w-3xl mx-auto px-7 py-6">
           {tab === "appearance" ? (
             <AppearanceSection />
+          ) : tab === "personalization" ? (
+            <PersonalizationSection />
           ) : tab === "models" ? (
             <section>
               <PanelHead
@@ -144,6 +148,38 @@ export function SettingsView({
       </div>
     </main>
   );
+}
+
+function PersonalizationSection() {
+  const { locale } = useI18n();
+  const zh = locale === "zh-CN";
+  const [prompt, setPrompt] = useState("");
+  const [memory, setMemory] = useState(true);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    getSettings().then((s: any) => {
+      setPrompt(s.personalization_prompt || "");
+      setMemory(s.memory_enabled !== false);
+    }).catch(() => {});
+  }, []);
+  const save = async () => {
+    await setPersonalization(prompt, memory);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1800);
+  };
+  return <section>
+    <PanelHead title={zh ? "个性化" : "Personalization"} sub={zh ? "让 Atlas 更了解你的偏好，并在后续任务中持续遵循。" : "Give Atlas durable context about your preferences and working style."} />
+    <div className={CARD + " p-4 mb-5"}>
+      <h3 className="font-semibold text-[14px] mb-1">{zh ? "自定义指令" : "Custom instructions"}</h3>
+      <p className={FIELD_HELP}>{zh ? "这些指令会作为系统提示词附加到每个新任务。" : "These instructions are added to the system prompt for new tasks."}</p>
+      <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={7} className="mt-3 w-full rounded-xl border border-line bg-paper p-3 text-[13px] outline-none focus:border-accent" placeholder={zh ? "例如：回答简洁，先给结论；涉及开发设计时给出置信度评估。" : "Example: Be concise and state the conclusion first."} />
+      <div className="mt-3 flex items-center justify-between">
+        <div><div className="text-[13px] font-medium">{zh ? "启用记忆" : "Enable memory"}</div><div className={FIELD_HELP}>{zh ? "允许 Atlas 在任务之间保存和使用你的偏好。" : "Allow Atlas to retain and use preferences across tasks."}</div></div>
+        <button type="button" role="switch" aria-checked={memory} onClick={() => setMemory((v) => !v)} className={`relative h-6 w-11 rounded-full transition ${memory ? "bg-accent" : "bg-lineStrong"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${memory ? "left-6" : "left-1"}`} /></button>
+      </div>
+      <button type="button" onClick={save} className={BTN_ACCENT + " mt-4"}>{saved ? (zh ? "已保存" : "Saved") : (zh ? "保存" : "Save")}</button>
+    </div>
+  </section>;
 }
 
 // -- Voice input: deliberate model provisioning + compatibility + microphone test (§37) --------
