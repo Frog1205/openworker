@@ -941,19 +941,19 @@ export function App() {
     setRunning(false);
     // "New session" under a browsed persona switches to it (expand≠switch: the header alone
     // doesn't switch; this explicit action does).
+    // Every explicit new task starts without a project context. Project-scoped personas will
+    // reopen the folder gate below, while scratch personas remain unscoped until chosen.
+    setWorkspace(null);
+    setBranch(null);
     if (target !== agent) {
       setAgent(target);
       if (gatesWorkspace(target)) {
         // Never inherit the previous persona's folder — it may be a scratch dir. Clearing it
         // also blocks the connection effect, so nothing can chat behind the open gate.
-        setWorkspace(null);
-        setBranch(null);
         setShowGate(true);
       } else setShowGate(false);
     }
-    // Knowledge family: a new conversation starts fresh (orphan) — clear the workspace so the
-    // server provisions a NEW scratch dir for the new session id. Code keeps its repo.
-    if (!gatesWorkspace(target)) setWorkspace(null);
+    setShowGate(gatesWorkspace(target));
     setSessionId(newId());
   };
   // Inbox → session: the item carries its session's workspace/agent, so open it directly.

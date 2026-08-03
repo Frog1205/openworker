@@ -473,7 +473,7 @@ export function Composer(props: Props) {
 
       <div
         className={
-          "composer max-w-3xl mx-auto rounded-2xl border border-line bg-panel shadow-sm" +
+          "composer relative max-w-3xl mx-auto rounded-2xl border border-line bg-panel shadow-sm" +
           (dragging ? " dragging" : "")
         }
         onDragOver={(e) => {
@@ -516,6 +516,22 @@ export function Composer(props: Props) {
                 </button>
               ))
             )}
+          </div>
+        )}
+        {props.workspacePickerEnabled && props.workspace !== undefined && (
+          <div className="absolute left-4 -top-3 z-10">
+            <button
+              type="button"
+              ref={workspaceButtonRef}
+              className="chip flex items-center gap-1.5 max-w-[220px] rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12px] text-muted shadow-sm hover:text-ink hover:bg-paper"
+              title={props.workspace || (zh ? "选择项目空间" : "Choose project workspace")}
+              aria-label={zh ? "选择项目空间" : "Choose project workspace"}
+              onClick={() => setWorkspacePickerOpen(true)}
+            >
+              <Icon name="folder" size={14} />
+              <span className="truncate">{workspaceName || (zh ? "选择项目空间" : "Choose workspace")}</span>
+              <Icon name="chevronDown" size={11} />
+            </button>
           </div>
         )}
         <textarea
@@ -582,22 +598,6 @@ export function Composer(props: Props) {
             </div>
           ) : props.workspace !== undefined ? (
             <div className="flex items-center gap-1 min-w-0">
-              {props.workspacePickerEnabled && (
-                <button
-                  type="button"
-                  ref={workspaceButtonRef}
-                  className="chip flex items-center gap-1.5 max-w-[180px] px-2 py-1 rounded-lg text-[12px] text-muted hover:text-ink hover:bg-paper"
-                  title={props.workspace || (zh ? "选择项目空间" : "Choose project workspace")}
-                  aria-label={zh ? "选择项目空间" : "Choose project workspace"}
-                  onClick={() => {
-                    setWorkspacePickerOpen(true);
-                  }}
-                >
-                  <Icon name="folder" size={14} />
-                  <span className="truncate">{workspaceName || (zh ? "选择项目空间" : "Choose workspace")}</span>
-                  <Icon name="chevronDown" size={11} />
-                </button>
-              )}
               <ModeMenu
                 mode={props.mode}
                 onModeChange={props.onModeChange}
