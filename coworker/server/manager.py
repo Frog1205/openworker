@@ -458,6 +458,7 @@ class SessionManager:
             # Inbox-based callbacks so a rebuilt engine can still get approvals/answers (and, on
             # resume, the already-resolved item returns immediately).
             approver=approver or self.inbox_approver(session_id, agent),
+            user_instructions=str(self._prefs.get("personalization_prompt") or ""),
             directory_requester=directory_requester
             or self.inbox_directory_requester(session_id, agent),
             plan_approver=plan_approver or self.inbox_plan_approver(session_id, agent),
@@ -1850,6 +1851,8 @@ class SessionManager:
             "model_ready": self._provider_configured(self._model_provider(self.model)),
             "source": "env" if env_key else ("store" if stored else None),
             "onboarded": bool(self._prefs.get("onboarded")),
+            "personalization_prompt": str(self._prefs.get("personalization_prompt") or ""),
+            "memory_enabled": bool(self._prefs.get("memory_enabled", True)),
             "experimental_connectors": experimental_enabled(self.secrets),
             "surfaces": self._surfaces(),
             "nav_layout": self._nav_layout(),
@@ -1863,6 +1866,12 @@ class SessionManager:
             **self.pdf_settings(),
             **self.compaction_settings_payload(),
         }
+
+    def set_personalization(self, prompt: str, memory_enabled: bool) -> dict[str, Any]:
+        self._prefs["personalization_prompt"] = str(prompt or "").strip()
+        self._prefs["memory_enabled"] = bool(memory_enabled)
+        self._save_prefs()
+        return {"ok": True, "personalization_prompt": self._prefs["personalization_prompt"], "memory_enabled": self._prefs["memory_enabled"]}
 
     def _surfaces(self) -> dict[str, bool]:
         """Which session surfaces are shown in the sidebar. Cowork is always on; Chat and Code
@@ -2731,6 +2740,7 @@ class SessionManager:
             approver=self._scheduled_approver(task, session_id),
             provider=self.provider,
             memory_store=self.memory_store,
+            user_instructions=str(self._prefs.get("personalization_prompt") or ""),
             secrets=self.secrets,
             # No scheduling tools inside a scheduled run: the executing agent's job is to DO the
             # task, and instructions that mention timing ("every day at 5:32pm…") otherwise tempt

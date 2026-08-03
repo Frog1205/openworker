@@ -724,6 +724,13 @@ def create_app(manager: SessionManager) -> FastAPI:
             body.get("content", ""), body.get("scope", "workspace")
         )
 
+    @app.post("/v1/settings/personalization")
+    def set_personalization(body: dict) -> dict[str, Any]:
+        return manager.set_personalization(
+            str((body or {}).get("prompt", "")),
+            bool((body or {}).get("memory_enabled", True)),
+        )
+
     @app.post("/v1/chat/completions")
     def chat_completions(body: dict) -> dict[str, Any]:
         model = body.get("model", manager.model)
