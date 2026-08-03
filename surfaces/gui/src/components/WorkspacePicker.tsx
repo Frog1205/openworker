@@ -155,13 +155,13 @@ export function WorkspacePicker({ current, onChoose, onClear, onClose, anchorRef
               />
               <button
                 type="button"
-                className="rounded-lg border border-line px-2 text-[12px] hover:bg-paper disabled:opacity-50"
+                className="rounded-lg border border-line px-2 text-[12px] cursor-pointer hover:bg-paper"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
                   void browse();
                 }}
-                disabled={browsing}
+                aria-busy={browsing}
               >
                 {zh ? "浏览" : "Browse"}
               </button>
