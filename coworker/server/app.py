@@ -1433,6 +1433,11 @@ def create_app(manager: SessionManager) -> FastAPI:
     def settings_custom_model_remove(slug: str) -> dict[str, Any]:
         return manager.remove_custom_model(slug)
 
+    @app.post("/v1/settings/custom-models/test")
+    async def settings_custom_model_test(body: dict) -> dict[str, Any]:
+        b = body or {}
+        return await asyncio.to_thread(manager.test_custom_model, b.get("model", ""), b.get("protocol", "openai"), b.get("base_url", ""), b.get("api_key", ""))
+
     @app.post("/v1/settings/onboarded")
     def settings_set_onboarded(body: dict) -> dict[str, Any]:
         return manager.set_onboarded(bool((body or {}).get("value", True)))
