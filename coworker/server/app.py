@@ -1669,6 +1669,15 @@ def create_app(manager: SessionManager) -> FastAPI:
 
         async def directory_requester(args: dict, tool_call_id=None) -> dict:
             # The engine has already emitted DIRECTORY_REQUESTED. Park, await, then apply the grant.
+            if engine.permissions.mode is Mode.AUTO:
+                path = str(args.get("path", "")).strip()
+                if not path:
+                    return {"granted": False, "error": "no directory was provided"}
+                writable = bool(args.get("writable", False))
+                res = manager.add_root(session_id, path, writable)
+                if not res.get("ok"):
+                    return {"granted": False, "error": res.get("error", "could not grant access")}
+                return {"granted": True, "path": path, "writable": writable}
             item = manager.inbox.add_directory(
                 session_id,
                 "Grant access to a folder?",

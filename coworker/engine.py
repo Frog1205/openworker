@@ -927,19 +927,21 @@ class TurnEngine:
                 "error": "directory requests aren't available here",
             }
         else:
-            yield Event(
-                EventType.DIRECTORY_REQUESTED,
-                {
-                    "reason": str(args.get("reason", "")),
-                    "path": str(args.get("path", "")),
-                    "writable": bool(args.get("writable", False)),
-                },
-            )
-            self._audit(
-                tool_call,
-                stage="directory_requested",
-                reason=str(args.get("reason", "")),
-            )
+            auto_access = self.permissions.mode is Mode.AUTO
+            if not auto_access:
+                yield Event(
+                    EventType.DIRECTORY_REQUESTED,
+                    {
+                        "reason": str(args.get("reason", "")),
+                        "path": str(args.get("path", "")),
+                        "writable": bool(args.get("writable", False)),
+                    },
+                )
+                self._audit(
+                    tool_call,
+                    stage="directory_requested",
+                    reason=str(args.get("reason", "")),
+                )
             result = await self._interruptible(
                 self.directory_requester(dict(args), tool_call.id),
                 interrupted={"granted": False, "error": "interrupted by user"},
