@@ -188,6 +188,10 @@ def create_app(manager: SessionManager) -> FastAPI:
     api_token = os.environ.get("COWORKER_API_TOKEN", "")
     tokenless_paths = {
         "/v1/health",
+        # Opens the local OS folder chooser; it returns only after the user selects/cancels
+        # and does not expose files or mutate server state, so browser dev can invoke it
+        # without depending on a separately injected sidecar token.
+        "/v1/workspaces/pick",
         "/auth/callback",
         "/mcp/oauth/callback",
         "/oauth/callback",
