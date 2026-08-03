@@ -1841,6 +1841,32 @@ class SessionManager:
         self._save_prefs()
         return {"ok": True, **self.get_settings()}
 
+    def test_custom_model(self, model: str, protocol: str, base_url: str, api_key: str) -> dict[str, Any]:
+        """Probe a custom relay without persisting its credentials or model entry."""
+        from ..providers.anthropic_provider import AnthropicProvider
+        from ..providers.openai_provider import OpenAIProvider
+
+        target = str(model or "").strip()
+        scheme = str(protocol or "openai").strip().lower()
+        endpoint = str(base_url or "").strip().rstrip("/")
+        key = str(api_key or "").strip()
+        if not target or scheme not in {"openai", "claude"} or not endpoint or not key:
+            return {"ok": False, "error": "请填写模型、协议、接口地址和 API 密钥"}
+        if endpoint.endswith("/chat/completions") or endpoint.endswith("/messages"):
+            endpoint = endpoint.rsplit("/", 1)[0]
+        if not endpoint.endswith("/v1"):
+            endpoint += "/v1"
+        try:
+            if scheme == "claude":
+                provider = AnthropicProvider(api_key=key, base_url=endpoint, thinking_budget=0)
+                turn = provider.complete(model=target, messages=[{"role": "user", "content": "Reply with OK only."}], max_tokens=16)
+            else:
+                provider = OpenAIProvider(api_key=key, base_url=endpoint)
+                turn = provider.complete(model=target, messages=[{"role": "user", "content": "Reply with OK only."}], max_tokens=16, temperature=0)
+            return {"ok": True, "message": "连接成功", "preview": (turn.text or "").strip()[:80]}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)[:500]}
+
     def remove_model(self, model: str) -> dict[str, Any]:
         """Remove a model id from the picker. Custom ids are dropped; matrix models are
         hidden by id (the matrix is derived, not stored, so a bare drop would resurrect

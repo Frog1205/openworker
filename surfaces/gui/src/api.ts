@@ -751,6 +751,11 @@ export async function removeCustomModel(slug: string): Promise<ModelSettings & {
   return res.json();
 }
 
+export async function testCustomModel(input: { model: string; protocol: "openai" | "claude"; base_url: string; api_key: string }): Promise<{ ok: boolean; error?: string; message?: string; preview?: string }> {
+  const res = await fetch(`${httpBase()}/v1/settings/custom-models/test`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  return res.json();
+}
+
 export interface PdfSettings {
   pdf_fallback: "text" | "images";
   pdf_max_pages: number;

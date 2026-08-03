@@ -16,6 +16,7 @@ import {
   getSubscriptions,
   removeModel,
   removeCustomModel,
+  testCustomModel,
   resolveUnauthorized,
   unsubscribeChannel,
   patchMcpServer,
@@ -179,6 +180,8 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState("");
   const [error, setError] = useState("");
   const save = async () => {
     setSaving(true); setError("");
@@ -186,6 +189,11 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
     setSaving(false);
     if (!r.ok) { setError(r.error || t("settings.models.custom.error")); return; }
     setName(""); setModel(""); setBaseUrl(""); setApiKey(""); setOpen(false); onChanged();
+  };
+  const test = async () => {
+    setTesting(true); setTestResult("");
+    const r: { ok: boolean; error?: string; preview?: string } = await testCustomModel({ model, protocol, base_url: baseUrl, api_key: apiKey }).catch(() => ({ ok: false, error: "network" }));
+    setTesting(false); setTestResult(r.ok ? `${t("settings.models.custom.testOk")}${r.preview ? ` · ${r.preview}` : ""}` : `${t("settings.models.custom.testFailed")}: ${r.error || "unknown"}`);
   };
   return <div className={`${CARD} mt-6 p-4`} data-testid="custom-model-card">
     <div className="flex items-start justify-between gap-3">
@@ -200,6 +208,8 @@ function CustomModelCard({ settings, onChanged }: { settings: ModelSettings; onC
       <input className="field" placeholder={protocol === "openai" ? "https://proxy.example.com/v1" : "https://proxy.example.com/v1"} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
       <input className="field sm:col-span-2" type="password" placeholder={t("settings.models.custom.key")} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
       {error && <div className="text-[12px] text-danger sm:col-span-2">{error}</div>}
+      {testResult && <div className={`text-[12px] sm:col-span-2 ${testResult.startsWith(t("settings.models.custom.testOk")) ? "text-ok" : "text-danger"}`}>{testResult}</div>}
+      <button className={BTN_BORDERED} disabled={testing || !model || !baseUrl || !apiKey} onClick={test}>{testing ? t("settings.models.custom.testing") : t("settings.models.custom.test")}</button>
       <button className={`${BTN_ACCENT} sm:col-span-2`} disabled={saving || !name || !model || !baseUrl || !apiKey} onClick={save}>{saving ? t("settings.models.custom.saving") : t("settings.models.custom.save")}</button>
     </div>}
   </div>;
